@@ -1,0 +1,39 @@
+{
+  "name": "c4-05-m",
+  "version": "1.0.0",
+  "description": "Api configurations for development purposes.",
+  "main": "app.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/No-Country/c4-05-m.git#backend-prod"
+  },
+  "keywords": [
+    "api",
+    "login",
+    "nocountry"
+  ],
+  "author": "Matias Silva, Nicolas Gonzales, James Noria.",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/No-Country/c4-05-m/issues"
+  },
+  "homepage": "https://github.com/No-Country/c4-05-m/tree/backend-prod#readme",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.0.0",
+    "express": "^4.17.3",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^6.2.8"
+  },
+  "devDependencies": {
+    "morgan": "^1.10.0",
+    "nodemon": "^2.0.15"
+  }
+}
