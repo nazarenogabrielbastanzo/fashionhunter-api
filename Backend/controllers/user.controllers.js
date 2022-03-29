@@ -1,6 +1,8 @@
 // Import Libreries
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const { storage } = require("../database/firebase");
+const { ref, uploadBytes, getDownloadURL } = require("firebase/storage");
 
 // Import Utils
 const { catchAsync } = require("../utils/catchAsync");
@@ -38,10 +40,58 @@ exports.loginUser = catchAsync(async (req, res, next) => {
 
 // Checking the validation of the token
 
-exports.checkToken = catchSync(async (req, res, next) => {
+exports.checkToken = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success"
   });
 });
 
 // END Checking the validation of the token
+
+// Create default image picture
+
+exports.createDefaultImage = catchAsync(async (req, res, next) => {
+  const imgRef = ref(storage, `defaultImagePicture/${req.file.originalname}`);
+
+  const result = await uploadBytes(imgRef, req.file.buffer);
+
+  // PENDING CREATE MODEL TO SAVE THE INFORMATION
+  const newImageDefault = await Image.create({
+    img: result.metadata.fullPath
+  });
+
+  res.status(201).json({
+    status: "success",
+    data: {
+      img: newImageDefault
+    }
+  });
+});
+
+// END Create default image picture
+
+// Select default image picture
+
+exports.selectDefaultImage = catchAsync(async (req, res, next) => {
+  // PENDING TO TEST ITS FUNCIONALITY
+  const img = await Image.find({});
+
+  const imgsPromises = img.map(async ({ img }) => {
+    const imgRef = ref(storage, img);
+
+    const imgDownloadUrl = await getDownloadURL(imgRef);
+
+    return { img: imgDownloadUrl };
+  });
+
+  const resolvedImg = await Promise.all(imgsPromises);
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      img: resolvedImg
+    }
+  });
+});
+
+// END Select default image picture

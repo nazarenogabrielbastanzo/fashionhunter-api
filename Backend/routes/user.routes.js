@@ -6,7 +6,12 @@ const router = express.Router();
 
 // Controllers
 
-const { loginUser, checkToken } = require("../controllers/user.controllers");
+const {
+  loginUser,
+  checkToken,
+  createDefaultImage,
+  selectDefaultImage
+} = require("../controllers/user.controllers");
 
 // Middleware
 
@@ -17,6 +22,10 @@ const { validateSession } = require("../middleware/auth.middleware");
 router.post("/login", loginUser);
 
 router.get("/check-token", checkToken);
+
+router.post("/create-default-image", createDefaultImage);
+
+router.get("/default-image", selectDefaultImage);
 
 router.use(validateSession);
 
