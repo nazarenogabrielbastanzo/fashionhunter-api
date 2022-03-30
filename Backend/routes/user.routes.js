@@ -10,9 +10,12 @@ const {
   loginUser,
   checkToken,
   createDefaultImage,
-  selectDefaultImage
+  selectDefaultImage,
+  createUser,
+  getAllUsers
 } = require("../controllers/user.controllers");
 
+router.post("/user", createUser);
 // Middleware
 
 const { validateSession } = require("../middleware/auth.middleware");
@@ -21,12 +24,14 @@ const { validateSession } = require("../middleware/auth.middleware");
 
 router.post("/login", loginUser);
 
-router.get("/check-token", checkToken);
+router.post("/img", createDefaultImage);
 
-router.post("/create-default-image", createDefaultImage);
-
-router.get("/default-image", selectDefaultImage);
+router.get("/img", selectDefaultImage);
 
 router.use(validateSession);
+router.get("/check-token", checkToken);
+
+router.get("/user", getAllUsers);
+
 
 module.exports = { userRouter: router };

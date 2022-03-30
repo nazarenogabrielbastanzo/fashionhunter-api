@@ -7,7 +7,8 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "NODE_ENV=development nodemon -x \"clear;node\" server.js",
+    "start:prod": "NODE_ENV=production nodemon server.js"
   },
   "repository": {
     "type": "git",
@@ -31,7 +32,8 @@
     "express": "^4.17.3",
     "firebase": "^9.6.10",
     "jsonwebtoken": "^8.5.1",
-    "mongoose": "^6.2.8"
+    "mongoose": "^6.2.8",
+    "validator": "^13.7.0"
   },
   "devDependencies": {
     "morgan": "^1.10.0",

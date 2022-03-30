@@ -1,26 +1,23 @@
-// Import Libreries
+// Import Libraries
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const { storage } = require("../database/firebase");
-const { ref, uploadBytes, getDownloadURL } = require("firebase/storage");
+// const { storage } = require("../database/firebase");
+// const { ref, uploadBytes, getDownloadURL } = require("firebase/storage");
 
 // Import Utils
 const { catchAsync } = require("../utils/catchAsync");
 const { AppError } = require("../utils/AppError");
 
-// Create a Controllers
+// Import Models
+const User = require("../models/userModel");
 
 // Login User
-
 exports.loginUser = catchAsync(async (req, res, next) => {
   const { username, password } = req.body;
-
-  // ITS PENDING TO IMPORT THE MODEL FOR VALIDATE THE FUNCTIONALIBY
   const user = await User.findOne({ username });
-
   const isPasswordValid = await bcrypt.compare(password, user.password);
 
-  const token = await jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+  const token = jwt.sign({ username: username }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN
   });
 
@@ -36,20 +33,14 @@ exports.loginUser = catchAsync(async (req, res, next) => {
   });
 });
 
-// END login User
-
 // Checking the validation of the token
-
 exports.checkToken = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success"
   });
 });
 
-// END Checking the validation of the token
-
 // Create default image picture
-
 exports.createDefaultImage = catchAsync(async (req, res, next) => {
   const imgRef = ref(storage, `defaultImagePicture/${req.file.originalname}`);
 
@@ -68,13 +59,11 @@ exports.createDefaultImage = catchAsync(async (req, res, next) => {
   });
 });
 
-// END Create default image picture
-
 // Select default image picture
-
 exports.selectDefaultImage = catchAsync(async (req, res, next) => {
   // PENDING TO TEST ITS FUNCIONALITY
   const img = await Image.find({});
+  console.log(typeof img);
 
   const imgsPromises = img.map(async ({ img }) => {
     const imgRef = ref(storage, img);
@@ -94,4 +83,35 @@ exports.selectDefaultImage = catchAsync(async (req, res, next) => {
   });
 });
 
-// END Select default image picture
+// Create User
+exports.createUser = catchAsync(async (req, res, next) => {
+  const { firstName, lastName, username, email, password, passwordConfirm } = req.body;
+
+  const user = await User.create({
+    firstName,
+    lastName,
+    username,
+    email,
+    password,
+    passwordConfirm
+  });
+
+  res.status(201).json({
+    status: "success",
+    data: {
+      user
+    }
+  });
+});
+
+// Get All Users
+exports.getAllUsers = catchAsync(async (req, res, next) => {
+  const users = await User.find();
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      users
+    }
+  });
+});

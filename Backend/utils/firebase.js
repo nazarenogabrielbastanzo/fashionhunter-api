@@ -1,5 +1,5 @@
 // Import Libreries
-const { initializeApp } = require("firebase/app");
+const { initializeApp } = require("@firebase/app");
 const { getStorage } = require("firebase/storage");
 const dotenv = require("dotenv");
 
