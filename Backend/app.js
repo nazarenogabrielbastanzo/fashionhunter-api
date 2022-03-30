@@ -1,14 +1,20 @@
-// Import Express
+// Importing the required modules
 const express = require("express");
+const morgan = require("morgan");
+
+// Init Express
+const app = express();
+
+// Setting dev environment, testing purposes.
+if (process.env.NODE_ENV === "development") {
+  app.use(morgan("dev"));
+}
 
 // Import GlobalError Middleware
 const { globalErrorHandler } = require("./middleware/error.middleware");
 
 // Import Router
 const { userRouter } = require("./routes/user.routes");
-
-// Init Express
-const app = express();
 
 // Enable to receive JSON
 app.use(express.json());
@@ -23,3 +29,5 @@ app.use("*", (req, res, next) => {
 
 // Init GlobalError Middleware
 app.use(globalErrorHandler);
+
+module.exports = app; // exporting the app to use in the server.js file

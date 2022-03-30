@@ -10,6 +10,9 @@ const { catchAsync } = require("../utils/catchAsync");
 // Init dotenv
 dotenv.config({ path: "./config.env" });
 
+// Import model
+const User = require("../models/userModel");
+
 exports.validateSession = catchAsync(async (req, res, next) => {
   let token;
 
@@ -23,18 +26,18 @@ exports.validateSession = catchAsync(async (req, res, next) => {
     return next(new AppError(401, "Invalid session"));
   }
 
-  // Retorn the token, no a boolean
+  // Return the token, no a boolean
   const decodedToken = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-  // ITS PENDING TO IMPORT THE MODEL FOR VALIDATE THE FUNCTIONALIBY
-  const user = await User.findById(decodedToken._id).select("-password");
+  // // ITS PENDING TO IMPORT THE MODEL FOR VALIDATE THE FUNCTIONALIBY
+  // const user = await User.findOne(decodedToken._id).select("password");
 
-  if (!user) {
-    return next(new AppError(401, "This user is no longer available"));
-  }
+  // if (!user) {
+  //   return next(new AppError(401, "This user is no longer available"));
+  // }
 
-  // Create a property in a request object for using in another controllers
-  req.currentUser = user;
+  // // Create a property in a request object for using in another controllers
+  // req.currentUser = user;
 
   next();
 });

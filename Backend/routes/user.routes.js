@@ -12,9 +12,12 @@ const {
   createDefaultImage,
   selectDefaultImage,
   sendEmailResetPassword,
-  resetPassword
+  resetPassword,
+  createUser,
+  getAllUsers
 } = require("../controllers/user.controllers");
 
+router.post("/user", createUser);
 // Middleware
 
 const {
@@ -30,12 +33,14 @@ router.post("/reset-password", validateResetPassword, resetPassword);
 
 router.post("/login", loginUser);
 
-router.get("/check-token", checkToken);
+router.post("/img", createDefaultImage);
 
-router.post("/create-default-image", createDefaultImage);
-
-router.get("/default-image", selectDefaultImage);
+router.get("/img", selectDefaultImage);
 
 router.use(validateSession);
+router.get("/check-token", checkToken);
+
+router.get("/user", getAllUsers);
+
 
 module.exports = { userRouter: router };
