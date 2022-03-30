@@ -10,14 +10,23 @@ const {
   loginUser,
   checkToken,
   createDefaultImage,
-  selectDefaultImage
+  selectDefaultImage,
+  sendEmailResetPassword,
+  resetPassword
 } = require("../controllers/user.controllers");
 
 // Middleware
 
-const { validateSession } = require("../middleware/auth.middleware");
+const {
+  validateSession,
+  validateResetPassword
+} = require("../middleware/auth.middleware");
 
 // Routes
+
+router.post("/send-reset-password", sendEmailResetPassword);
+
+router.post("/reset-password", validateResetPassword, resetPassword);
 
 router.post("/login", loginUser);
 
