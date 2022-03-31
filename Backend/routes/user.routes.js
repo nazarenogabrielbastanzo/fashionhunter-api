@@ -17,7 +17,6 @@ const {
   getAllUsers
 } = require("../controllers/user.controllers");
 
-router.post("/user", createUser);
 // Middleware
 
 const {
@@ -25,22 +24,29 @@ const {
   validateResetPassword
 } = require("../middleware/auth.middleware");
 
+// Utils
+
+const { upload } = require("../utils/multer");
+
 // Routes
+
+router.post("/user", upload.single("userImg"), createUser);
+
+router.post("/login", loginUser);
 
 router.post("/send-reset-password", sendEmailResetPassword);
 
 router.post("/reset-password", validateResetPassword, resetPassword);
 
-router.post("/login", loginUser);
-
-router.post("/img", createDefaultImage);
-
-router.get("/img", selectDefaultImage);
+router
+  .route("/img")
+  .post(upload.single("userDefaultImg"), createDefaultImage)
+  .get(selectDefaultImage);
 
 router.use(validateSession);
-router.get("/check-token", checkToken);
 
 router.get("/user", getAllUsers);
 
+router.get("/check-token", checkToken);
 
 module.exports = { userRouter: router };

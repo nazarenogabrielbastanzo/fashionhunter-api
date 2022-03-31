@@ -16,8 +16,9 @@ const { globalErrorHandler } = require("./middleware/error.middleware");
 // Import Router
 const { userRouter } = require("./routes/user.routes");
 
-// Enable to receive JSON
+// Enable to receive JSON and Form-data
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Enable the endpoints
 app.use("/api/v1/users", userRouter);
