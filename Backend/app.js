@@ -1,6 +1,7 @@
 // Importing the required modules
 const express = require("express");
 const morgan = require("morgan");
+const helmet = require("helmet");
 
 // Init Express
 const app = express();
@@ -19,6 +20,9 @@ const { userRouter } = require("./routes/user.routes");
 // Enable to receive JSON and Form-data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Init Helmet
+app.use(helmet());
 
 // Enable the endpoints
 app.use("/api/v1/users", userRouter);
