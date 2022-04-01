@@ -7,33 +7,29 @@ const fs = require("fs");
 const path = "./.config.env";
 
 try {
-  if (fs.existsSync(path)) {
-    console.log("Las variables de entorno ya se encuentran en el directorio");
-  } else {
-    mongoose.connect(dbUri).then(() => {
-      console.log("Importando variables de entorno...");
+  mongoose.connect(dbUri).then(() => {
+    console.log("Importando variables de entorno...");
+  });
+
+  const dotenv = new mongoose.Schema({
+    secrets: {
+      type: String
+    }
+  });
+
+  const dotEnvs = mongoose.model("dotenv", dotenv);
+
+  const getSecrets = async () => {
+    const secrets = await dotEnvs.findOne();
+    const decoded = atob(secrets.secrets);
+    fs.appendFile(path, decoded, function (err) {
+      if (err) throw err;
+      console.log(`El archivo ${path} ha sido creado o actualizado!`);
     });
+    await mongoose.connection.close();
+  };
 
-    const dotenv = new mongoose.Schema({
-      secrets: {
-        type: String
-      }
-    });
-
-    const dotEnvs = mongoose.model("dotenv", dotenv);
-
-    const getSecrets = async () => {
-      const secrets = await dotEnvs.findOne();
-      const decoded = atob(secrets.secrets);
-      fs.appendFile(path, decoded, function (err) {
-        if (err) throw err;
-        console.log(`El archivo ${path} ha sido creado!`);
-      });
-      await mongoose.connection.close();
-    };
-
-    getSecrets();
-  }
+  getSecrets();
 } catch (err) {
   console.log("Consultar con James Noria");
 }
