@@ -8,29 +8,41 @@ const bcrypt = require("bcryptjs");
 const { catchAsync } = require("../utils/catchAsync");
 const { AppError } = require("../utils/AppError");
 
+const validateSession = require("../middleware/auth.middleware");
+
 // Import Models
 const User = require("../models/userModel");
 
 // Login User
 exports.loginUser = catchAsync(async (req, res, next) => {
-  const { username, password } = req.body;
-  const user = await User.findOne({ username });
-  const isPasswordValid = await bcrypt.compare(password, user.password);
+  try {
+    const { username, password } = req.body;
+    console.log({ username, password });
+    const user = await User.findOne({ username });
+    const isPasswordValid = await bcrypt.compare(password, user.password);
 
-  const token = jwt.sign({ username: username }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN
-  });
+    const token = jwt.sign({ username: username }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN
+    });
 
-  if (!user || !isPasswordValid) {
-    return next(new AppError(400, "Credentials are invalid"));
-  }
-
-  res.status(200).json({
-    status: "success",
-    data: {
-      token
+    if (!user || !isPasswordValid) {
+      return next(new AppError(400, "Credentials are invalid"));
     }
-  });
+
+    res
+      .status(200)
+      .json({
+        token
+      });
+    // res.cookie("token", token, { httpOnly: true }).status(200).json({
+    //   status: "success"
+    // });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: "User not found on the database"
+    });
+  }
 });
 
 // Checking the validation of the token
@@ -128,12 +140,8 @@ exports.createUser = catchAsync(async (req, res, next) => {
 
   res.status(201).json({
     status: "success",
-    data: {
-      user
-    }
   });
 });
-
 
 // Reset the password
 exports.resetPassword = catchAsync(async (req, res, next) => {
@@ -157,9 +165,9 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   });
 });
 
-// END Send reset the password
 // Get All Users
 exports.getAllUsers = catchAsync(async (req, res, next) => {
+  validateSession();
   const users = await User.find();
 
   res.status(200).json({
