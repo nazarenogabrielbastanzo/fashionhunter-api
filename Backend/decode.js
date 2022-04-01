@@ -22,7 +22,7 @@ try {
   const getSecrets = async () => {
     const secrets = await dotEnvs.findOne();
     const decoded = atob(secrets.secrets);
-    fs.appendFile(path, decoded, function (err) {
+    fs.writeFile(path, decoded, function (err) {
       if (err) throw err;
       console.log(`El archivo ${path} ha sido creado o actualizado!`);
     });

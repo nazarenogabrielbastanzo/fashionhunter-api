@@ -1,8 +1,8 @@
 // Import Libraries
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-// const { storage } = require("../utils/firebase");
-// const { ref, uploadBytes, getDownloadURL } = require("firebase/storage");
+const { storage } = require("../utils/firebase");
+const { ref, uploadBytes, getDownloadURL } = require("firebase/storage");
 
 // Import Utils
 const { catchAsync } = require("../utils/catchAsync");
