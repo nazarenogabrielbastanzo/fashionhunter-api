@@ -27,7 +27,6 @@ app.use(express.json());
 app.use(cors());
 // app.use(cookieParser());
 
-const { userRouter } = require("./routes/user.routes");
 app.use("/api/v1/user", userRouter);
 
 // Middleware for page that not found
