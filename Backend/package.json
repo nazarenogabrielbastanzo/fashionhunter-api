@@ -33,6 +33,7 @@
     "express": "^4.17.3",
     "express-list-endpoints": "^6.0.0",
     "firebase": "^9.6.10",
+    "googleapis": "^100.0.0",
     "helmet": "^5.0.2",
     "html-to-text": "^8.1.0",
     "jsonwebtoken": "^8.5.1",

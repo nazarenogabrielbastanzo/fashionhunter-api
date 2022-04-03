@@ -1,7 +1,6 @@
 # Fashion Hunter API reference
 
 > Esta documentación estará en constante cambio hasta finalizar el proyecto y disponible en su última versión unicamente en la rama `backend-prod`
-> 
 
 La siguiente documentación busca mantener informado al grupo de trabajo, como tambien servir de referencia para todo aquel con intención de probar los endpoints y/o propositos de debugging.
 
@@ -9,13 +8,12 @@ La siguiente documentación busca mantener informado al grupo de trabajo, como t
 
 | Metodo | Endpoint | Uso |
 | --- | --- | --- |
-| POST | http://localhost:<PORT>/api/v1/user/user | Crear un nuevo usuario |
-| GET | http://localhost:<PORT>/api/v1/user/user | Obtener todos los usuarios |
-| POST | http://localhost:<PORT>/api/v1/user/login | Login de usuario |
+| POST | http://localhost:3000/api/v1/user/login | Login de usuario |
+| POST | http://localhost:3000/api/v1/user/signup | Crear un nuevo usuario |
+| POST | http://localhost:3000/api/v1/user/forgotPassword | Enviar email que valida el 'reset password' |
+| GET | http://localhost:3000/api/v1/user/all-user | Obtener todos los usuarios (Token requerido) |
 
-Documentación: 
-
-[Fashion Hunter](https://documenter.getpostman.com/view/18428706/UVyrVciL)
+**Documentación en Postman: [Fashion Hunter](https://documenter.getpostman.com/view/18428706/UVyrVciL)**
 
 ## Modelo Usuario
 

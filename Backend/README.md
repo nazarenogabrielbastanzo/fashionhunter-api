@@ -1,4 +1,4 @@
-# Fashio Hunter - Backend
+# Fashion Hunter - Backend
 
 Este es el repositorio donde el grupo c4-05-m del programa NoCountry.
 

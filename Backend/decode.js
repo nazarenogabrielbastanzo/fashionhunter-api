@@ -3,8 +3,10 @@ const dbUri = atob(
   "bW9uZ29kYitzcnY6Ly9mYXNoaW9uaHVudGVyX25vY291bnRyeTp1b1EyWWJrWndOb2pQQWRtQGNsdXN0ZXIwLnU2Nmd6Lm1vbmdvZGIubmV0L2RvdGVudj9yZXRyeVdyaXRlcz10cnVlJnc9bWFqb3JpdHk="
 );
 const fs = require("fs");
-
 const path = "./.config.env";
+
+console.log('\n¿Errores?\nRecuerde usar siempre los siguientes comandos antes de iniciar el servidor:\n- git pull origin backend-prod\n- npm install\n')
+
 
 try {
   mongoose.connect(dbUri).then(() => {
