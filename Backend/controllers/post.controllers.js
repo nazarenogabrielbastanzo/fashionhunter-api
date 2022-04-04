@@ -9,13 +9,20 @@ const { AppError } = require("../utils/AppError");
 const Post = require("../models/postModel");
 const User = require("../models/userModel");
 
+// User Controllers
+const {
+  getAllUsers
+} = require("../controllers/user.controllers");
+
 //create post
 exports.createPost = catchAsync(async (req, res) => {
-  const { userId, image, description } = req.body;
+  //const { userId, image, description } = req.body;
 
   try {
-    const users = await User.getAllUsers()
-    const createPost = await Post.create(userId, image, description);
+    const users = await User.getAllUsers
+    console.log(users);
+    const createPost = await Post.create(req.body);
+    //const createPost = await Post.create(userId, image, description);
   console.log("CreaPost?:__", createPost);
   //   if (!createPost) {
   //     return next(new AppError(400, "Credentials are invalid"));

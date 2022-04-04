@@ -8,7 +8,7 @@ const router = express.Router();
 
 const {
   createPost,
-  getPost,
+  getPosts,
   createDefaultImage,
   selectDefaultImage,
   getAllUsers
@@ -17,7 +17,7 @@ const {
 
 
 // Routes
-//router.get("/home", getPost);
+router.get("/", getPosts);
 
 router.post("/", createPost);
 
