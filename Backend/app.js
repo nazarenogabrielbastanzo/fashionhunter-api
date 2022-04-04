@@ -15,6 +15,7 @@ const { globalErrorHandler } = require("./middleware/error.middleware");
 
 // Import Router
 const { userRouter } = require("./routes/user.routes");
+const { postRouter } = require("./routes/post.routes");
 
 // Enable to receive JSON and Form-data
 app.use(express.json());
@@ -26,6 +27,7 @@ app.use(cors());
 // app.use(cookieParser());
 
 app.use("/api/v1/user", userRouter);
+app.use("/api/v1/posts", postRouter);
 
 // Middleware for page that not found
 app.use("*", (req, res, next) => {
