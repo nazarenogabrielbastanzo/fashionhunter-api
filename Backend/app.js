@@ -22,7 +22,6 @@ app.use(express.urlencoded({ extended: true }));
 
 // Init Helmet
 app.use(helmet());
-app.use(express.json());
 app.use(cors());
 // app.use(cookieParser());
 

@@ -16,7 +16,6 @@ const User = require("../models/userModel");
 const Image = require("../models/imageModel");
 
 // Login User
-
 exports.loginUser = catchAsync(async (req, res, next) => {
   try {
     const { username, password } = req.body;
@@ -55,7 +54,6 @@ exports.checkToken = catchAsync(async (req, res, next) => {
 });
 
 // Create default image picture
-
 exports.createDefaultImage = catchAsync(async (req, res, next) => {
   const imgRef = ref(storage, `defaultImagePicture/${req.file.originalname}`);
 
@@ -74,7 +72,6 @@ exports.createDefaultImage = catchAsync(async (req, res, next) => {
 });
 
 // Select default image picture
-
 exports.selectDefaultImage = catchAsync(async (req, res, next) => {
   const img = await Image.find();
 
@@ -97,7 +94,6 @@ exports.selectDefaultImage = catchAsync(async (req, res, next) => {
 });
 
 // Create User
-
 exports.createUser = catchAsync(async (req, res, next) => {
   const { firstName, lastName, username, email, password, passwordConfirm } = req.body;
 
@@ -127,7 +123,6 @@ exports.createUser = catchAsync(async (req, res, next) => {
 });
 
 // Send email to reset the password
-
 exports.sendEmailResetPassword = catchAsync(async (req, res, next) => {
   const { email } = req.body;
 
@@ -137,29 +132,31 @@ exports.sendEmailResetPassword = catchAsync(async (req, res, next) => {
     return next(new AppError(400, "Credentials are invalid"));
   }
 
-  const token = await jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN
   });
 
-  await new Email(email).sendResetPassword();
-
-  res.status(204).json({
-    status: "success",
-    data: {
-      token
-    }
-  });
+  await new Email(email)
+    .sendEmail()
+    .then(() => {
+      res.status(200).json({
+        status: "success",
+        message: "Email sent successfully",
+        token
+      });
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 });
 
 // Reset the password
-
 exports.resetPassword = catchAsync(async (req, res, next) => {
   const { password } = req.body;
 
   const { user } = req.resetPasswordUser;
 
   const salt = await bcrypt.genSalt(12);
-
   const hashedPassword = await bcrypt.hash(password, salt);
 
   const updateUser = await User.findByIdAndUpdate(user.username, {
@@ -175,7 +172,6 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 });
 
 // Get All Users
-
 exports.getAllUsers = catchAsync(async (req, res, next) => {
   const users = await User.find().select("-password");
 

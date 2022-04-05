@@ -1,11 +1,7 @@
-// Express
-
 const express = require("express");
-
 const router = express.Router();
 
 // Controllers
-
 const {
   loginUser,
   checkToken,
@@ -18,25 +14,20 @@ const {
 } = require("../controllers/user.controllers");
 
 // Middleware
-
 const {
   validateSession,
   validateResetPassword
 } = require("../middleware/auth.middleware");
 
 // Utils
-
 const { upload } = require("../utils/multer");
 
 // Routes
-
-router.post("/user", upload.single("userImg"), createUser);
-
+router.post("/signup", upload.single("userImg"), createUser);
 router.post("/login", loginUser);
 
-router.post("/send-reset-password", sendEmailResetPassword);
-
-router.post("/reset-password", validateResetPassword, resetPassword);
+router.post("/forgotPassword", sendEmailResetPassword);
+router.post("/resetpassword", validateResetPassword, resetPassword);
 
 router
   .route("/img")
@@ -45,8 +36,7 @@ router
 
 router.use(validateSession);
 
-router.get("/user", getAllUsers);
-
+router.get("/all-users", getAllUsers);
 router.get("/check-token", checkToken);
 
 module.exports = { userRouter: router };
