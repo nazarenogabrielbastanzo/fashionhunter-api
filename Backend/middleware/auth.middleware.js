@@ -57,7 +57,7 @@ exports.validateResetPassword = catchAsync(async (req, res, next) => {
 
   const decodedToken = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-  const user = await User.findById(decodedToken._id).select("-password");
+  const user = await User.findById(decodedToken.id).select("-password");
 
   if (!user) {
     return next(new AppError(401, "This token is no longer available"));

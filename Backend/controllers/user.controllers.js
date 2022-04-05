@@ -154,16 +154,20 @@ exports.sendEmailResetPassword = catchAsync(async (req, res, next) => {
 exports.resetPassword = catchAsync(async (req, res, next) => {
   const { password } = req.body;
 
-  const { user } = req.resetPasswordUser;
+  const user = req.resetPasswordUser;
 
   const salt = await bcrypt.genSalt(12);
   const hashedPassword = await bcrypt.hash(password, salt);
 
-  const updateUser = await User.findByIdAndUpdate(user.username, {
+  // console.log(user);
+
+  const query = { email: user.email };
+
+  const updateUser = await User.findOneAndUpdate(query, {
     password: hashedPassword
   }).select("-password");
 
-  res.status(204).json({
+  res.status(200).json({
     status: "success",
     data: {
       updateUser
