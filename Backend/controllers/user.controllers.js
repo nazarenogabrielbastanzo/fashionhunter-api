@@ -14,6 +14,8 @@ const validateSession = require("../middleware/auth.middleware");
 // Import Models
 const User = require("../models/userModel");
 const Image = require("../models/imageModel");
+const Token = require("../models/tokenModel");
+const { json } = require("express");
 
 // Login User
 exports.loginUser = catchAsync(async (req, res, next) => {
@@ -46,7 +48,6 @@ exports.loginUser = catchAsync(async (req, res, next) => {
 });
 
 // Checking the validation of the token
-
 exports.checkToken = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success"
@@ -132,11 +133,15 @@ exports.sendEmailResetPassword = catchAsync(async (req, res, next) => {
     return next(new AppError(400, "Credentials are invalid"));
   }
 
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN
-  });
+  // We generate a token just for setting a time limit when the user will be able to reset the password
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+  await Token.create({ token });
 
-  await new Email(email)
+  // change localhost when the server is deployed
+  // const link = `http://localhost:3000/resetPassword?token=${token}&id=${user._id}`;
+  const link = `file:///home/jamesnoria/sideProjects/login-test/frontend/resetPassword.html?token=${token}&id=${user.username}`;
+
+  await new Email(email, link)
     .sendEmail()
     .then(() => {
       res.status(200).json({
@@ -151,22 +156,27 @@ exports.sendEmailResetPassword = catchAsync(async (req, res, next) => {
 });
 
 // Reset the password
-exports.resetPassword = catchAsync(async (req, res, next) => {
-  const { password } = req.body;
+exports.resetPassword = catchAsync(async (req, res) => {
+  const { token, id } = req.query;
+  const { password, passwordConfirm } = req.body;
 
-  const { user } = req.resetPasswordUser;
+  // const user = User.findOne({ username: id });
+  console.log(id);
+  // const data = JSON.stringify(user.username);
+  // console.log(user.username)
 
-  const salt = await bcrypt.genSalt(12);
-  const hashedPassword = await bcrypt.hash(password, salt);
+  // const salt = await bcrypt.genSalt(12);
+  // const hashedPassword = await bcrypt.hash(password, salt);
 
-  const updateUser = await User.findByIdAndUpdate(user.username, {
-    password: hashedPassword
-  }).select("-password");
+  // const updateUser = await User.findByIdAndUpdate(username, {
+  //   password,
+  //   passwordConfirm
+  // }).select("-password", "-passwordConfirm");
 
   res.status(204).json({
     status: "success",
     data: {
-      updateUser
+      user
     }
   });
 });
