@@ -27,7 +27,7 @@ router.post("/signup", upload.single("userImg"), createUser);
 router.post("/login", loginUser);
 
 router.post("/forgotPassword", sendEmailResetPassword);
-router.post("/resetpassword", validateResetPassword, resetPassword);
+router.post("/resetpassword/:token", resetPassword);
 
 router
   .route("/img")

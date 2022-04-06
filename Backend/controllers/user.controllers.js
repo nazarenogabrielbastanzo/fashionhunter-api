@@ -8,8 +8,7 @@ const { ref, uploadBytes, getDownloadURL } = require("firebase/storage");
 const { catchAsync } = require("../utils/catchAsync");
 const { AppError } = require("../utils/AppError");
 const { Email } = require("../utils/email");
-
-const validateSession = require("../middleware/auth.middleware");
+const { promisify } = require("util");
 
 // Import Models
 const User = require("../models/userModel");
@@ -133,11 +132,11 @@ exports.sendEmailResetPassword = catchAsync(async (req, res, next) => {
   }
 
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN
+    expiresIn: process.env.JWT_EXPIRES_IN_TOKEN
   });
 
   await new Email(email)
-    .sendEmail()
+    .sendWelcome(token)
     .then(() => {
       res.status(200).json({
         status: "success",
@@ -152,19 +151,26 @@ exports.sendEmailResetPassword = catchAsync(async (req, res, next) => {
 
 // Reset the password
 exports.resetPassword = catchAsync(async (req, res, next) => {
-  const { password } = req.body;
+  const { password, passwordConfirm } = req.body;
 
-  const user = req.resetPasswordUser;
+  const { token } = req.params;
+
+  const decodedToken = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+  const userId = decodedToken.id;
 
   const salt = await bcrypt.genSalt(12);
+
   const hashedPassword = await bcrypt.hash(password, salt);
 
-  // console.log(user);
+  const hashedPasswordConfirm = await bcrypt.hash(passwordConfirm, salt);
 
-  const query = { email: user.email };
-
-  const updateUser = await User.findOneAndUpdate(query, {
-    password: hashedPassword
+  if (password !== passwordConfirm) {
+    return next(new AppError(400, "The passwords are differents"));
+  }
+  const updateUser = await User.findByIdAndUpdate(userId, {
+    password: hashedPassword,
+    passwordConfirm: hashedPasswordConfirm
   }).select("-password");
 
   res.status(200).json({
