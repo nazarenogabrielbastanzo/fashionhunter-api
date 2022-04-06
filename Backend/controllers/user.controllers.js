@@ -34,7 +34,7 @@ exports.loginUser = catchAsync(async (req, res, next) => {
     }
 
     res.status(200).json({
-      token
+      body: token
     });
     // res.cookie("token", token, { httpOnly: true }).status(200).json({
     //   status: "success"
@@ -45,13 +45,6 @@ exports.loginUser = catchAsync(async (req, res, next) => {
       message: "User not found on the database"
     });
   }
-});
-
-// Checking the validation of the token
-exports.checkToken = catchAsync(async (req, res, next) => {
-  res.status(200).json({
-    status: "success"
-  });
 });
 
 // Create default image picture
@@ -133,13 +126,8 @@ exports.sendEmailResetPassword = catchAsync(async (req, res, next) => {
     return next(new AppError(400, "Credentials are invalid"));
   }
 
-  // We generate a token just for setting a time limit when the user will be able to reset the password
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
   await Token.create({ token });
-
-  // change localhost when the server is deployed
-  // const link = `http://localhost:3000/resetPassword?token=${token}&id=${user._id}`;
-  const link = `file:///home/jamesnoria/sideProjects/login-test/frontend/resetPassword.html?token=${token}&id=${user.username}`;
 
   await new Email(email, link)
     .sendEmail()
@@ -182,6 +170,7 @@ exports.resetPassword = catchAsync(async (req, res) => {
 });
 
 // Get All Users
+// IMPORTANT: this endpoint will be used for the admin only
 exports.getAllUsers = catchAsync(async (req, res, next) => {
   const users = await User.find().select("-password");
 
@@ -200,7 +189,32 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     data: {
+      length: resolvedUsers.length,
       users: resolvedUsers
+    }
+  });
+});
+
+// Get User by ID
+exports.getUserById = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const user = await User.findById(id).select("-password");
+
+  if (!user) {
+    return next(new AppError(400, "User not found"));
+  }
+
+  const imgRef = ref(storage, user.img);
+
+  const imgDownloadUrl = await getDownloadURL(imgRef);
+
+  user.img = imgDownloadUrl;
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      user
     }
   });
 });

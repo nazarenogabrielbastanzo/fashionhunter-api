@@ -4,13 +4,13 @@ const router = express.Router();
 // Controllers
 const {
   loginUser,
-  checkToken,
   createDefaultImage,
   selectDefaultImage,
   sendEmailResetPassword,
   resetPassword,
   createUser,
-  getAllUsers
+  getAllUsers,
+  getUserById,
 } = require("../controllers/user.controllers");
 
 // Middleware
@@ -27,8 +27,7 @@ router.post("/signup", upload.single("userImg"), createUser);
 router.post("/login", loginUser);
 
 router.post("/forgotPassword", sendEmailResetPassword);
-// router.post("/resetpassword", validateResetPassword, resetPassword);
-router.post("/resetpassword", resetPassword);
+router.post("/resetpassword", validateResetPassword, resetPassword);
 
 router
   .route("/img")
@@ -38,6 +37,6 @@ router
 router.use(validateSession);
 
 router.get("/all-users", getAllUsers);
-router.get("/check-token", checkToken);
+router.get("/:id", getUserById);
 
 module.exports = { userRouter: router };
