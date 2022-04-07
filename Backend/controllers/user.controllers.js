@@ -9,8 +9,6 @@ const { catchAsync } = require("../utils/catchAsync");
 const { AppError } = require("../utils/AppError");
 const { Email } = require("../utils/email");
 
-const validateSession = require("../middleware/auth.middleware");
-
 // Import Models
 const User = require("../models/userModel");
 const Image = require("../models/imageModel");
