@@ -10,8 +10,9 @@ const { GCP_CLIENT_ID, GCP_CLIENT_SECRET, GCP_REDIRECT_URI, GCP_REFRESH_TOKEN } 
   process.env;
 
 class Email {
-  constructor(email) {
+  constructor(email, link) {
     this.email = email;
+    this.link = link;
     this.from = `Fashion Hunter <${process.env.GOOGLE_ACCOUNT}>`;
   }
 

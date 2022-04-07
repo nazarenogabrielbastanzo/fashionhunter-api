@@ -13,6 +13,8 @@ const { promisify } = require("util");
 // Import Models
 const User = require("../models/userModel");
 const Image = require("../models/imageModel");
+const Token = require("../models/tokenModel");
+const { json } = require("express");
 
 // Login User
 exports.loginUser = catchAsync(async (req, res, next) => {
@@ -31,25 +33,15 @@ exports.loginUser = catchAsync(async (req, res, next) => {
     }
 
     res.status(200).json({
+      status: "success",
       token
     });
-    // res.cookie("token", token, { httpOnly: true }).status(200).json({
-    //   status: "success"
-    // });
   } catch (error) {
     res.status(500).json({
       status: "error",
       message: "User not found on the database"
     });
   }
-});
-
-// Checking the validation of the token
-
-exports.checkToken = catchAsync(async (req, res, next) => {
-  res.status(200).json({
-    status: "success"
-  });
 });
 
 // Create default image picture
@@ -177,12 +169,13 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     data: {
-      updateUser
+      user
     }
   });
 });
 
 // Get All Users
+// IMPORTANT: this endpoint will be used for the admin only
 exports.getAllUsers = catchAsync(async (req, res, next) => {
   const users = await User.find().select("-password");
 
@@ -201,7 +194,32 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     data: {
+      length: resolvedUsers.length,
       users: resolvedUsers
+    }
+  });
+});
+
+// Get User by ID
+exports.getUserById = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const user = await User.findById(id).select("-password");
+
+  if (!user) {
+    return next(new AppError(400, "User not found"));
+  }
+
+  const imgRef = ref(storage, user.img);
+
+  const imgDownloadUrl = await getDownloadURL(imgRef);
+
+  user.img = imgDownloadUrl;
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      user
     }
   });
 });
