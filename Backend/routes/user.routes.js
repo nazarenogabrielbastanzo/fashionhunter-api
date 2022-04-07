@@ -10,14 +10,11 @@ const {
   resetPassword,
   createUser,
   getAllUsers,
-  getUserById,
+  getUserById
 } = require("../controllers/user.controllers");
 
 // Middleware
-const {
-  validateSession,
-  validateResetPassword
-} = require("../middleware/auth.middleware");
+const { validateSession } = require("../middleware/auth.middleware");
 
 // Utils
 const { upload } = require("../utils/multer");

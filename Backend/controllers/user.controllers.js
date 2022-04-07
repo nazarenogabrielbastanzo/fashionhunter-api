@@ -13,7 +13,6 @@ const { promisify } = require("util");
 // Import Models
 const User = require("../models/userModel");
 const Image = require("../models/imageModel");
-const Token = require("../models/tokenModel");
 const { json } = require("express");
 
 // Login User
@@ -169,7 +168,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     data: {
-      user
+      updateUser
     }
   });
 });
