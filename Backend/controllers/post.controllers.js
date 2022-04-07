@@ -64,3 +64,41 @@ exports.deletePost = catchAsync(async (req, res, next) => {
     status: "success"
   });
 });
+
+// GET POST BY ID
+exports.getPostById = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  // It's pending to import the model
+  const post = await Post.findById(id);
+
+  if (!post) {
+    return next(new AppError(404, "I cant find the post with the given ID"));
+  }
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      post
+    }
+  });
+});
+
+// GET POST BY USER
+exports.getPostByUser = catchAsync(async (req, res, next) => {
+  const { username } = req.params;
+
+  // It's pending to import the model
+  const post = await Post.find({ username });
+
+  if (!post) {
+    return next(new AppError(404, "I cant find the post with the given username"));
+  }
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      post
+    }
+  });
+});
