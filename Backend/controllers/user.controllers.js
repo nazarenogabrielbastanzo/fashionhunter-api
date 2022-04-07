@@ -170,7 +170,8 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   }
   const updateUser = await User.findByIdAndUpdate(userId, {
     password: hashedPassword,
-    passwordConfirm: hashedPasswordConfirm
+    passwordConfirm: hashedPasswordConfirm,
+    passwordChangedAt: Date.now()
   }).select("-password");
 
   res.status(200).json({

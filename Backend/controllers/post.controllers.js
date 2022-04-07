@@ -1,3 +1,7 @@
+// Import Libraries
+const { storage } = require("../utils/firebase");
+const { ref, uploadBytes, getDownloadURL } = require("firebase/storage");
+
 // Import Utils
 const { AppError } = require("../utils/AppError");
 const { catchAsync } = require("../utils/catchAsync");
@@ -19,6 +23,28 @@ exports.updatePost = catchAsync(async (req, res, next) => {
     status: "success",
     data: {
       postUpdate
+    }
+  });
+});
+
+exports.updatePostImg = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const imgRef = ref(storage, `posts-${username}/${Date.now()}-${req.file.originalname}`);
+
+  const result = await uploadBytes(imgRef, req.file.buffer);
+
+  // It's pending to import the model and try the functionability
+  const postImgUpdate = await Post.findByIdAndUpdate(id, { img: result });
+
+  if (!postImgUpdate) {
+    return next(new AppError(404, "I cant find the post with the given ID"));
+  }
+
+  res.status(201).json({
+    status: "success",
+    data: {
+      postImgUpdate
     }
   });
 });
