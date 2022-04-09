@@ -1,5 +1,5 @@
-// const { storage } = require("../database/firebase");
-// const { ref, uploadBytes, getDownloadURL } = require("firebase/storage");
+const { storage } = require("../utils/firebase");
+const { ref, uploadBytes, getDownloadURL } = require("firebase/storage");
 
 // Import Utils
 const { catchAsync } = require("../utils/catchAsync");
@@ -16,19 +16,23 @@ const {
 
 //create post
 exports.createPost = catchAsync(async (req, res) => {
-  //const { userId, image, description } = req.body;
+
+  const { description } = req.body;
+
+  const user = req.currentUser
+  console.log("CurrentUser:__", user)
+  
+  const imgRef = ref(storage, `imgs-${user}/${Date.now()}-${req.file.user}`);
+  const result = await uploadBytes(imgRef, req.file.buffer)
 
   try {
-    const users = await User.getAllUsers
-    console.log(users);
-    const createPost = await Post.create(req.body);
-    //const createPost = await Post.create(userId, image, description);
-  console.log("CreaPost?:__", createPost);
-  //   if (!createPost) {
-  //     return next(new AppError(400, "Credentials are invalid"));
-  //   }
-  // status code 201  if all goes well, return ok: true
-  res.status(201).json({
+    const createPost = await Post.create({
+      userId: user,
+      image: result.metadata.fullPath,
+      description
+    });
+    console.log("CreaPost?:__", createPost);
+    res.status(201).json({
     status: "success",
     msg: "Post created"
   });} catch (err){
@@ -38,7 +42,7 @@ exports.createPost = catchAsync(async (req, res) => {
 });
 
 //get posts
-exports.getPosts = catchAsync(async (req, res) => {
+exports.getAllPosts = catchAsync(async (req, res) => {
     
     try {
       const posts = await Post.find({});
@@ -69,32 +73,8 @@ exports.getPostToId = catchAsync(async (req, res) => {
   try {
     const post = await Post.find({_id: id});
     console.log(post[0]);
-    if (post[0]) {
-      const {
-        id: idDB,
-        userid: useridDB,
-        username: usernameDB,
-        avatar: avatarDB,
-        title: titleDB,
-        description: descriptionDB,
-        image: imageDB,
-        posted: postedDB,
-        likes: likesDB
-      } = post[0];
-
-      res.status(200).json({
-        id: idDB,
-        user: {
-          userid: useridDB,
-          username: usernameDB,
-          avatar: avatarDB
-        },
-        title: titleDB,
-        description: descriptionDB,
-        image: imageDB,
-        posted: postedDB,
-        likes: likesDB
-      });
+    if (post.length > 0) {
+      res.status(200).send(posts);
     } else {
       res.status(404).json({
         ok: false,

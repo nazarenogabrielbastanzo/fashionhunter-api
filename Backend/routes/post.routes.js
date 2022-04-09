@@ -1,34 +1,35 @@
 // Express
 
 const express = require("express");
-
 const router = express.Router();
 
-// Controllers
 
+// Controllers
 const {
   createPost,
-  getPosts,
+  getAllPosts,
   createDefaultImage,
   selectDefaultImage,
   getAllUsers
 } = require("../controllers/post.controllers");
 
-
+// Middleware
+const {
+  validateSession
+} = require("../middleware/auth.middleware");
 
 // Routes
-router.get("/", getPosts);
+//router.post("/img", createDefaultImage);
+
+//router.get("/img", selectDefaultImage);
+
+//router.use(validateSession);
+
+router.get("/", getAllPosts);
+
+//router.get("/:id", getPostToId)
 
 router.post("/", createPost);
-
-// router.post("/img", createDefaultImage);
-
-// router.get("/img", selectDefaultImage);
-
-// router.use(validateSession);
-// router.get("/check-token", checkToken);
-
-// router.get("/user", getAllUsers);
 
 
 module.exports = { postRouter: router };
