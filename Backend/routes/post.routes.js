@@ -18,18 +18,22 @@ const {
   validateSession
 } = require("../middleware/auth.middleware");
 
+// Utils
+const { upload
+} = require("../utils/multer")
+
 // Routes
 //router.post("/img", createDefaultImage);
 
 //router.get("/img", selectDefaultImage);
 
-//router.use(validateSession);
+router.use(validateSession);
 
 router.get("/", getAllPosts);
 
 //router.get("/:id", getPostToId)
 
-router.post("/", createPost);
+router.post("/", upload.single("postImg"),createPost);
 
 
 module.exports = { postRouter: router };

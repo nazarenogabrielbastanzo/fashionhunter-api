@@ -23,21 +23,24 @@ exports.createPost = catchAsync(async (req, res) => {
   const { description } = req.body;
 
   const user = req.currentUser
+
   console.log("CurrentUser:__", user)
   
-  const imgRef = ref(storage, `imgs-${user}/${Date.now()}-${req.file.user}`);
+  const imgRef = ref(storage, `imgs-${user.username}/posts/${Date.now()}-${req.file.orginalname}`);
+
   const result = await uploadBytes(imgRef, req.file.buffer)
 
   try {
     const createPost = await Post.create({
-      userId: user,
+      userId: user._id,
       image: result.metadata.fullPath,
       description
     });
     console.log("CreaPost?:__", createPost);
     res.status(201).json({
     status: "success",
-    msg: "Post created"
+    msg: "Post created",
+    data: {createPost}
   });} catch (err){
     console.log(err)
     res.status(500).send(error)
