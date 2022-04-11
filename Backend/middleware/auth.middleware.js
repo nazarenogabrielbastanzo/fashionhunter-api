@@ -41,29 +41,3 @@ exports.validateSession = catchAsync(async (req, res, next) => {
 
   next();
 });
-
-exports.validateResetPassword = catchAsync(async (req, res, next) => {
-  let token;
-
-  const { authorization } = req.headers;
-
-  if (authorization && authorization.startsWith("Bearer")) {
-    token = authorization.split(" ")[1];
-  }
-
-  if (!token) {
-    return next(new AppError(401, "Invalid token"));
-  }
-
-  const decodedToken = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-
-  const user = await User.findById(decodedToken._id).select("-password");
-
-  if (!user) {
-    return next(new AppError(401, "This token is no longer available"));
-  }
-
-  req.resetPasswordUser = user;
-
-  next();
-});

@@ -14,7 +14,7 @@ mongoose.connect(DB).then(() => {
 const port = process.env.PORT || 8000;
 app.listen(port);
 
-console.log('Documentacion: https://documenter.getpostman.com/view/18428706/UVyrVciL')
+console.log("Documentacion: https://documenter.getpostman.com/view/18428706/UVyrVciL");
 console.log("--- List of endpoints ---");
 const test = Object.values(listEndpoints(app));
 for (let i = 0; test.length > i; i++) {

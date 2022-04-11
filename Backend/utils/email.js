@@ -10,12 +10,13 @@ const { GCP_CLIENT_ID, GCP_CLIENT_SECRET, GCP_REDIRECT_URI, GCP_REFRESH_TOKEN } 
   process.env;
 
 class Email {
-  constructor(email) {
+  constructor(email, link) {
     this.email = email;
+    this.link = link;
     this.from = `Fashion Hunter <${process.env.GOOGLE_ACCOUNT}>`;
   }
 
-  async sendEmail() {
+  newTransport() {
     const oAuth2Client = new google.auth.OAuth2(
       GCP_CLIENT_ID,
       GCP_CLIENT_SECRET,
@@ -24,8 +25,9 @@ class Email {
 
     oAuth2Client.setCredentials({ refresh_token: GCP_REFRESH_TOKEN });
 
-    const accessToken = await oAuth2Client.getAccessToken();
-    const transport = nodemailer.createTransport({
+    const accessToken = oAuth2Client.getAccessToken();
+
+    return nodemailer.createTransport({
       service: "gmail",
       auth: {
         type: "OAuth2",
@@ -36,20 +38,24 @@ class Email {
         accessToken
       }
     });
+  }
 
-    const html = pug.renderFile(`${__dirname}/../emails/resetPassword.pug`);
+  async send(emailData) {
+    const html = pug.renderFile(`${__dirname}/../emails/resetPassword.pug`, emailData);
+
     const text = htmlToText(html);
 
-    const emailOptions = {
+    await this.newTransport().sendMail({
       from: this.from,
       to: this.email,
       subject: "Reset Password",
-      text: text,
-      html: html
-    };
+      text,
+      html
+    });
+  }
 
-    const result = await transport.sendMail(emailOptions);
-    return result;
+  async sendWelcome(token) {
+    await this.send({ token });
   }
 }
 
