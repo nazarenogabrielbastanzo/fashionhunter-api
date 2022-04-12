@@ -13,22 +13,22 @@ const Post = require("../models/postModel");
 const User = require("../models/userModel");
 
 // User Controllers
-const {
-  getAllUsers
-} = require("../controllers/user.controllers");
+const { getAllUsers } = require("../controllers/user.controllers");
 
-//create post
+//  Create post
 exports.createPost = catchAsync(async (req, res) => {
-
   const { description } = req.body;
 
-  const user = req.currentUser
+  const user = req.currentUser;
 
-  console.log("CurrentUser:__", user)
-  
-  const imgRef = ref(storage, `imgs-${user.username}/posts/${Date.now()}-${req.file.orginalname}`);
+  console.log("CurrentUser:__", user);
 
-  const result = await uploadBytes(imgRef, req.file.buffer)
+  const imgRef = ref(
+    storage,
+    `imgs-${user.username}/posts/${Date.now()}-${req.file.orginalname}`
+  );
+
+  const result = await uploadBytes(imgRef, req.file.buffer);
 
   try {
     const createPost = await Post.create({
@@ -38,43 +38,41 @@ exports.createPost = catchAsync(async (req, res) => {
     });
     console.log("CreaPost?:__", createPost);
     res.status(201).json({
-    status: "success",
-    msg: "Post created",
-    data: {createPost}
-  });} catch (err){
-    console.log(err)
-    res.status(500).send(error)
+      status: "success",
+      msg: "Post created",
+      data: { createPost }
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(error);
   }
 });
 
-//get posts
+// Get all posts
 exports.getAllPosts = catchAsync(async (req, res) => {
-    
-    try {
-      const posts = await Post.find({});
-      console.log(posts);
-    
-      if (posts.length > 0) {
-        res.status(200).send(posts);
-      } else {
-        res.status(400).json({
-          ok: false,
-          msg: "No Posts"
-        });
-      }
+  try {
+    const posts = await Post.find({});
+
+    if (posts.length > 0) {
+      res.status(200).send(posts);
+    } else {
+      res.status(400).json({
+        ok: false,
+        msg: "No Posts"
+      });
+    }
   } catch (error) {
     console.log(error);
-    res.status(500).send(error)
+    res.status(500).send(error);
   }
 });
 
-
+// Update the post
 exports.updatePost = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
   const data = filterObj(req.body, "title", "content");
 
-  // It's pending to import the model
   const postUpdate = await Post.findByIdAndUpdate(id, { ...data });
 
   if (!postUpdate) {
@@ -89,6 +87,7 @@ exports.updatePost = catchAsync(async (req, res, next) => {
   });
 });
 
+// Update the image post
 exports.updatePostImg = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
@@ -111,10 +110,10 @@ exports.updatePostImg = catchAsync(async (req, res, next) => {
   });
 });
 
+// Delete the post
 exports.deletePost = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
-  // It's pending to import the model
   // This is a soft delete technical
   const postUpdate = await Post.findByIdAndUpdate(id, { active: false });
 
@@ -127,11 +126,10 @@ exports.deletePost = catchAsync(async (req, res, next) => {
   });
 });
 
-// GET POST BY ID
+// Get post by id
 exports.getPostById = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
-  // It's pending to import the model
   const post = await Post.findById(id);
 
   if (!post) {
@@ -146,7 +144,7 @@ exports.getPostById = catchAsync(async (req, res, next) => {
   });
 });
 
-// GET POST BY USER
+// Get post by user
 exports.getPostByUser = catchAsync(async (req, res, next) => {
   const { username } = req.params;
 

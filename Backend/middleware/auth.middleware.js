@@ -29,8 +29,9 @@ exports.validateSession = catchAsync(async (req, res, next) => {
   // Return the token, no a boolean
   const decodedToken = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-  
-  const user = await User.findOne({username: decodedToken.username}).select("-password");
+  const user = await User.findOne({ username: decodedToken.username }).select(
+    "-password"
+  );
 
   if (!user) {
     return next(new AppError(401, "This user is no longer available"));
@@ -38,7 +39,6 @@ exports.validateSession = catchAsync(async (req, res, next) => {
 
   // // Create a property in a request object for using in another controllers
   req.currentUser = user;
-
 
   next();
 });
