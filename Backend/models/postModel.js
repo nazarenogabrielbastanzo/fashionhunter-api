@@ -19,7 +19,7 @@ const PostSchema = new mongoose.Schema({
   },
   comments: [
     {
-      text: { 
+      text: {
         type: String,
         required: true
       },
@@ -35,7 +35,7 @@ const PostSchema = new mongoose.Schema({
   ],
   postedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: "User"
   },
   active: {
     type: Boolean,

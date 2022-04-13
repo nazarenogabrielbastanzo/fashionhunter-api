@@ -1,5 +1,4 @@
 // Import Libraries
-
 const { storage } = require("../utils/firebase");
 const { ref, uploadBytes, getDownloadURL } = require("firebase/storage");
 
@@ -10,37 +9,32 @@ const { filterObj } = require("../utils/filterObj");
 
 // Import Models
 const Post = require("../models/postModel");
-const User = require("../models/userModel");
-
-// User Controllers
-const { getAllUsers } = require("../controllers/user.controllers");
 
 //  Create post
-exports.createPost = catchAsync(async (req, res) => {
-  const { description } = req.body;
-
-  const user = req.currentUser;
-
-  console.log("CurrentUser:__", user);
-
-  const imgRef = ref(
-    storage,
-    `imgs-${user.username}/posts/${Date.now()}-${req.file.orginalname}`
-  );
-
-  const result = await uploadBytes(imgRef, req.file.buffer);
-
+exports.createPost = catchAsync(async (req, res, next) => {
   try {
+    const { description } = req.body;
+
+    const user = req.currentUser;
+
+    const imgRef = ref(
+      storage,
+      `imgs-${user.username}/posts/${Date.now()}-${req.file.originalname}`
+    );
+
+    const result = await uploadBytes(imgRef, req.file.buffer);
+
     const createPost = await Post.create({
       userId: user._id,
-      image: result.metadata.fullPath,
-      description
+      description,
+      image: result.metadata.fullPath
     });
-    console.log("CreaPost?:__", createPost);
+
     res.status(201).json({
       status: "success",
-      msg: "Post created",
-      data: { createPost }
+      data: {
+        createPost
+      }
     });
   } catch (err) {
     console.log(err);
@@ -49,12 +43,38 @@ exports.createPost = catchAsync(async (req, res) => {
 });
 
 // Get all posts
-exports.getAllPosts = catchAsync(async (req, res) => {
+exports.getAllPosts = catchAsync(async (req, res, next) => {
   try {
-    const posts = await Post.find({});
+    const posts = await Post.find({ active: true });
+
+    const postPromises = posts.map(
+      async ({ _id, userId, image, description, likes, comments, created }) => {
+        const imgRef = ref(storage, image);
+
+        const imgDownloadUrl = await getDownloadURL(imgRef);
+
+        return {
+          _id,
+          userId,
+          image: imgDownloadUrl,
+          description,
+          likes,
+          comments,
+          created
+        };
+      }
+    );
+
+    const resolvedPost = await Promise.all(postPromises);
 
     if (posts.length > 0) {
-      res.status(200).send(posts);
+      res.status(200).json({
+        status: "success",
+        length: resolvedPost.length,
+        data: {
+          resolvedPost
+        }
+      });
     } else {
       res.status(400).json({
         ok: false,
@@ -67,11 +87,53 @@ exports.getAllPosts = catchAsync(async (req, res) => {
   }
 });
 
+// Get post by id
+exports.getPostById = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const post = await Post.findById(id);
+
+  if (!post) {
+    return next(new AppError(404, "I cant find the post with the given ID"));
+  }
+
+  const imgRef = ref(storage, post.image);
+
+  const imgDownloadUrl = await getDownloadURL(imgRef);
+
+  post.image = imgDownloadUrl;
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      post
+    }
+  });
+});
+
+// Get post by user
+exports.getPostByUser = catchAsync(async (req, res, next) => {
+  const { username } = req.params;
+
+  const post = await Post.find({ username, active: true });
+
+  if (!post) {
+    return next(new AppError(404, "I cant find the post with the given username"));
+  }
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      post
+    }
+  });
+});
+
 // Update the post
 exports.updatePost = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
-  const data = filterObj(req.body, "title", "content");
+  const data = filterObj(req.body, "description");
 
   const postUpdate = await Post.findByIdAndUpdate(id, { ...data });
 
@@ -79,11 +141,8 @@ exports.updatePost = catchAsync(async (req, res, next) => {
     return next(new AppError(404, "I cant find the post with the given ID"));
   }
 
-  res.status(201).json({
-    status: "success",
-    data: {
-      postUpdate
-    }
+  res.status(204).json({
+    status: "success"
   });
 });
 
@@ -91,22 +150,25 @@ exports.updatePost = catchAsync(async (req, res, next) => {
 exports.updatePostImg = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
-  const imgRef = ref(storage, `posts-${username}/${Date.now()}-${req.file.originalname}`);
+  const user = req.currentUser;
+
+  const imgRef = ref(
+    storage,
+    `imgs-${user.username}/posts/${Date.now()}-${req.file.originalname}`
+  );
 
   const result = await uploadBytes(imgRef, req.file.buffer);
 
-  // It's pending to import the model and try the functionability
-  const postImgUpdate = await Post.findByIdAndUpdate(id, { img: result });
+  const postImgUpdate = await Post.findByIdAndUpdate(id, {
+    image: result.metadata.fullPath
+  });
 
   if (!postImgUpdate) {
     return next(new AppError(404, "I cant find the post with the given ID"));
   }
 
-  res.status(201).json({
-    status: "success",
-    data: {
-      postImgUpdate
-    }
+  res.status(204).json({
+    status: "success"
   });
 });
 
@@ -123,42 +185,5 @@ exports.deletePost = catchAsync(async (req, res, next) => {
 
   res.status(204).json({
     status: "success"
-  });
-});
-
-// Get post by id
-exports.getPostById = catchAsync(async (req, res, next) => {
-  const { id } = req.params;
-
-  const post = await Post.findById(id);
-
-  if (!post) {
-    return next(new AppError(404, "I cant find the post with the given ID"));
-  }
-
-  res.status(200).json({
-    status: "success",
-    data: {
-      post
-    }
-  });
-});
-
-// Get post by user
-exports.getPostByUser = catchAsync(async (req, res, next) => {
-  const { username } = req.params;
-
-  // It's pending to import the model
-  const post = await Post.find({ username });
-
-  if (!post) {
-    return next(new AppError(404, "I cant find the post with the given username"));
-  }
-
-  res.status(200).json({
-    status: "success",
-    data: {
-      post
-    }
   });
 });
