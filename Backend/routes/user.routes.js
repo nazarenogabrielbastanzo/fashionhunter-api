@@ -10,7 +10,11 @@ const {
   resetPassword,
   createUser,
   getAllUsers,
-  getUserById
+  getUserById,
+  updatePasswordUser,
+  updatePersonalData,
+  updateUserImg,
+  deleteUser
 } = require("../controllers/user.controllers");
 
 // Middleware
@@ -21,9 +25,11 @@ const { upload } = require("../utils/multer");
 
 // Routes
 router.post("/signup", upload.single("userImg"), createUser);
+
 router.post("/login", loginUser);
 
 router.post("/forgotPassword", sendEmailResetPassword);
+
 router.post("/resetpassword/:token", resetPassword);
 
 router
@@ -34,6 +40,15 @@ router
 router.use(validateSession);
 
 router.get("/all-users", getAllUsers);
+
 router.get("/:id", getUserById);
+
+router.patch("/update-personalData/:id", updatePersonalData);
+
+router.patch("/update-userImg/:id", upload.single("userImg"), updateUserImg);
+
+router.patch("/update-password/:id", updatePasswordUser);
+
+router.delete("/delete-user/:id", deleteUser);
 
 module.exports = { userRouter: router };

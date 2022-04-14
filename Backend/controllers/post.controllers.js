@@ -3,80 +3,105 @@ const { storage } = require("../utils/firebase");
 const { ref, uploadBytes, getDownloadURL } = require("firebase/storage");
 
 // Import Utils
-const { AppError } = require("../utils/AppError");
 const { catchAsync } = require("../utils/catchAsync");
+const { AppError } = require("../utils/AppError");
 const { filterObj } = require("../utils/filterObj");
 
-const Post = require("../models/post.models");
+// Import Models
+const Post = require("../models/postModel");
 
-exports.updatePost = catchAsync(async (req, res, next) => {
-  const { id } = req.params;
+//  Create post
+exports.createPost = catchAsync(async (req, res, next) => {
+  try {
+    const { description } = req.body;
 
-  const data = filterObj(req.body, "title", "content");
+    const user = req.currentUser;
 
-  // It's pending to import the model
-  const postUpdate = await Post.findByIdAndUpdate(id, { ...data });
+    const imgRef = ref(
+      storage,
+      `imgs-${user.username}/posts/${Date.now()}-${req.file.originalname}`
+    );
 
-  if (!postUpdate) {
-    return next(new AppError(404, "I cant find the post with the given ID"));
+    const result = await uploadBytes(imgRef, req.file.buffer);
+
+    const createPost = await Post.create({
+      userId: user._id,
+      description,
+      image: result.metadata.fullPath
+    });
+
+    res.status(201).json({
+      status: "success",
+      data: {
+        createPost
+      }
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(error);
   }
+});
 
-  res.status(201).json({
-    status: "success",
-    data: {
-      postUpdate
+// Get all posts
+exports.getAllPosts = catchAsync(async (req, res, next) => {
+  try {
+    const posts = await Post.find({ active: true });
+
+    const postPromises = posts.map(
+      async ({ _id, userId, image, description, likes, comments, created }) => {
+        const imgRef = ref(storage, image);
+
+        const imgDownloadUrl = await getDownloadURL(imgRef);
+
+        return {
+          _id,
+          userId,
+          image: imgDownloadUrl,
+          description,
+          likes,
+          comments,
+          created
+        };
+      }
+    );
+
+    const resolvedPost = await Promise.all(postPromises);
+
+    if (posts.length > 0) {
+      res.status(200).json({
+        status: "success",
+        length: resolvedPost.length,
+        data: {
+          resolvedPost
+        }
+      });
+    } else {
+      res.status(400).json({
+        ok: false,
+        msg: "No Posts"
+      });
     }
-  });
-});
-
-exports.updatePostImg = catchAsync(async (req, res, next) => {
-  const { id } = req.params;
-
-  const imgRef = ref(storage, `posts-${username}/${Date.now()}-${req.file.originalname}`);
-
-  const result = await uploadBytes(imgRef, req.file.buffer);
-
-  // It's pending to import the model and try the functionability
-  const postImgUpdate = await Post.findByIdAndUpdate(id, { img: result });
-
-  if (!postImgUpdate) {
-    return next(new AppError(404, "I cant find the post with the given ID"));
+  } catch (error) {
+    console.log(error);
+    res.status(500).send(error);
   }
-
-  res.status(201).json({
-    status: "success",
-    data: {
-      postImgUpdate
-    }
-  });
 });
 
-exports.deletePost = catchAsync(async (req, res, next) => {
-  const { id } = req.params;
-
-  // It's pending to import the model
-  // This is a soft delete technical
-  const postUpdate = await Post.findByIdAndUpdate(id, { active: false });
-
-  if (!postUpdate) {
-    return next(new AppError(404, "I cant find the post with the given ID"));
-  }
-
-  res.status(204).json({
-    status: "success"
-  });
-});
-
-// GET POST BY ID
+// Get post by id
 exports.getPostById = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
-  // It's pending to import the model
   const post = await Post.findById(id);
 
   if (!post) {
     return next(new AppError(404, "I cant find the post with the given ID"));
   }
+
+  const imgRef = ref(storage, post.image);
+
+  const imgDownloadUrl = await getDownloadURL(imgRef);
+
+  post.image = imgDownloadUrl;
 
   res.status(200).json({
     status: "success",
@@ -86,12 +111,11 @@ exports.getPostById = catchAsync(async (req, res, next) => {
   });
 });
 
-// GET POST BY USER
+// Get post by user
 exports.getPostByUser = catchAsync(async (req, res, next) => {
   const { username } = req.params;
 
-  // It's pending to import the model
-  const post = await Post.find({ username });
+  const post = await Post.find({ username, active: true });
 
   if (!post) {
     return next(new AppError(404, "I cant find the post with the given username"));
@@ -105,22 +129,61 @@ exports.getPostByUser = catchAsync(async (req, res, next) => {
   });
 });
 
-// create post
-exports.createPost = catchAsync(async (req, res, next) => {
-  const { username } = req.params;
+// Update the post
+exports.updatePost = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
 
-  const imgRef = ref(storage, `posts-${username}/${Date.now()}-${req.file.originalname}`);
+  const data = filterObj(req.body, "description");
+
+  const postUpdate = await Post.findByIdAndUpdate(id, { ...data });
+
+  if (!postUpdate) {
+    return next(new AppError(404, "I cant find the post with the given ID"));
+  }
+
+  res.status(204).json({
+    status: "success"
+  });
+});
+
+// Update the image post
+exports.updatePostImg = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const user = req.currentUser;
+
+  const imgRef = ref(
+    storage,
+    `imgs-${user.username}/posts/${Date.now()}-${req.file.originalname}`
+  );
 
   const result = await uploadBytes(imgRef, req.file.buffer);
 
-  const data = filterObj(req.body, "title", "content");
+  const postImgUpdate = await Post.findByIdAndUpdate(id, {
+    image: result.metadata.fullPath
+  });
 
-  const post = await Post.create({ ...data, img: result });
+  if (!postImgUpdate) {
+    return next(new AppError(404, "I cant find the post with the given ID"));
+  }
 
-  res.status(201).json({
-    status: "success",
-    data: {
-      post
-    }
+  res.status(204).json({
+    status: "success"
+  });
+});
+
+// Delete the post
+exports.deletePost = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  // This is a soft delete technical
+  const postUpdate = await Post.findByIdAndUpdate(id, { active: false });
+
+  if (!postUpdate) {
+    return next(new AppError(404, "I cant find the post with the given ID"));
+  }
+
+  res.status(204).json({
+    status: "success"
   });
 });

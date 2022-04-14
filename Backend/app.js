@@ -12,6 +12,7 @@ app.use(morgan("dev"));
 
 // Import Router
 const { userRouter } = require("./routes/user.routes");
+const { postRouter } = require("./routes/post.routes");
 
 const { globalErrorHandler } = require("./middleware/error.middleware");
 
@@ -24,6 +25,7 @@ app.use(helmet());
 app.use(cors());
 
 app.use("/api/v1/user", userRouter);
+app.use("/api/v1/posts", postRouter);
 
 // Middleware for page that not found
 app.use("*", (req, res, next) => {

@@ -7,20 +7,21 @@ const { ref, uploadBytes, getDownloadURL } = require("firebase/storage");
 // Import Utils
 const { catchAsync } = require("../utils/catchAsync");
 const { AppError } = require("../utils/AppError");
+const { filterObj } = require("../utils/filterObj");
 const { Email } = require("../utils/email");
 const { promisify } = require("util");
 
 // Import Models
 const User = require("../models/userModel");
 const Image = require("../models/imageModel");
-const { json } = require("express");
 
 // Login User
 exports.loginUser = catchAsync(async (req, res, next) => {
   try {
     const { username, password } = req.body;
-    console.log({ username, password });
+
     const user = await User.findOne({ username });
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     const token = jwt.sign({ username: username }, process.env.JWT_SECRET, {
@@ -177,15 +178,35 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 // Get All Users
 // IMPORTANT: this endpoint will be used for the admin only
 exports.getAllUsers = catchAsync(async (req, res, next) => {
-  const users = await User.find().select("-password");
+  const users = await User.find({ active: true }).select("-password");
 
   const usersPromises = users.map(
-    async ({ _id, firstName, lastName, username, email, role, img }) => {
+    async ({
+      _id,
+      firstName,
+      lastName,
+      username,
+      email,
+      role,
+      img,
+      occupation,
+      biography
+    }) => {
       const imgRef = ref(storage, img);
 
       const imgDownloadUrl = await getDownloadURL(imgRef);
 
-      return { _id, firstName, lastName, username, email, role, img: imgDownloadUrl };
+      return {
+        _id,
+        firstName,
+        lastName,
+        username,
+        email,
+        role,
+        img: imgDownloadUrl,
+        occupation,
+        biography
+      };
     }
   );
 
@@ -204,6 +225,8 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
 exports.getUserById = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
+  // const user = await User.aggregate([{ $match: { _id: ObjectId(id), active: true } }]);
+
   const user = await User.findById(id).select("-password");
 
   if (!user) {
@@ -221,5 +244,94 @@ exports.getUserById = catchAsync(async (req, res, next) => {
     data: {
       user
     }
+  });
+});
+
+exports.updatePersonalData = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const data = filterObj(
+    req.body,
+    "firstName",
+    "lastName",
+    "occupation",
+    "email",
+    "biography"
+  );
+
+  await User.findByIdAndUpdate(id, { ...data });
+
+  res.status(204).json({
+    status: "success"
+  });
+});
+
+exports.updateUserImg = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const user = req.currentUser;
+
+  const imgRef = ref(
+    storage,
+    `imgs-${user.username}/${Date.now()}-${req.file.originalname}`
+  );
+
+  const result = await uploadBytes(imgRef, req.file.buffer);
+
+  const postImgUpdate = await User.findByIdAndUpdate(id, {
+    img: result.metadata.fullPath
+  });
+
+  if (!postImgUpdate) {
+    return next(new AppError(404, "I cant find the user with the given ID"));
+  }
+
+  res.status(204).json({
+    status: "success"
+  });
+});
+
+exports.updatePasswordUser = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const user = await User.findById(id);
+
+  const { oldPassword, newPassword, confirmNewPassword } = req.body;
+
+  const validatePassword = await bcrypt.compare(oldPassword, user.password);
+
+  if (!validatePassword) {
+    return next(new AppError(400, "The current password is wrong"));
+  }
+
+  const salt = await bcrypt.genSalt(12);
+
+  const newPasswordCrypt = await bcrypt.hash(newPassword, salt);
+
+  const confirmNewPasswordCrypt = await bcrypt.hash(confirmNewPassword, salt);
+
+  await User.findOneAndUpdate(
+    { username: user.username },
+    { password: newPasswordCrypt, passwordConfirm: confirmNewPasswordCrypt }
+  );
+
+  res.status(204).json({
+    status: "success"
+  });
+});
+
+// Delete user
+exports.deleteUser = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  // This is a soft delete technical
+  const userUpdate = await User.findByIdAndUpdate(id, { active: false });
+
+  if (!userUpdate) {
+    return next(new AppError(404, "I cant find the user with the given ID"));
+  }
+
+  res.status(204).json({
+    status: "success"
   });
 });

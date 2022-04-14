@@ -43,6 +43,14 @@ const UserSchema = new mongoose.Schema({
     enum: ["user", "admin"],
     default: "user"
   },
+  occupation: {
+    type: String,
+    required: false
+  },
+  biography: {
+    type: String,
+    required: false
+  },
   active: {
     type: Boolean,
     default: true,

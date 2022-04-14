@@ -29,15 +29,16 @@ exports.validateSession = catchAsync(async (req, res, next) => {
   // Return the token, no a boolean
   const decodedToken = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-  // // ITS PENDING TO IMPORT THE MODEL FOR VALIDATE THE FUNCTIONALIBY
-  // const user = await User.findOne(decodedToken._id).select("password");
+  const user = await User.findOne({ username: decodedToken.username }).select(
+    "-password"
+  );
 
-  // if (!user) {
-  //   return next(new AppError(401, "This user is no longer available"));
-  // }
+  if (!user) {
+    return next(new AppError(401, "This user is no longer available"));
+  }
 
   // // Create a property in a request object for using in another controllers
-  // req.currentUser = user;
+  req.currentUser = user;
 
   next();
 });
