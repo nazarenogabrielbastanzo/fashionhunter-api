@@ -7,6 +7,8 @@ const { AppError } = require("../utils/AppError");
 const { catchAsync } = require("../utils/catchAsync");
 const { filterObj } = require("../utils/filterObj");
 
+const Post = require("../models/post.models");
+
 exports.updatePost = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
@@ -96,6 +98,26 @@ exports.getPostByUser = catchAsync(async (req, res, next) => {
   }
 
   res.status(200).json({
+    status: "success",
+    data: {
+      post
+    }
+  });
+});
+
+// create post
+exports.createPost = catchAsync(async (req, res, next) => {
+  const { username } = req.params;
+
+  const imgRef = ref(storage, `posts-${username}/${Date.now()}-${req.file.originalname}`);
+
+  const result = await uploadBytes(imgRef, req.file.buffer);
+
+  const data = filterObj(req.body, "title", "content");
+
+  const post = await Post.create({ ...data, img: result });
+
+  res.status(201).json({
     status: "success",
     data: {
       post
