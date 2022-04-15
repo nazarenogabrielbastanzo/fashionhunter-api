@@ -1,6 +1,8 @@
 // Import Libraries
 const { storage } = require("../utils/firebase");
 const { ref, uploadBytes, getDownloadURL } = require("firebase/storage");
+const mongoose = require("mongoose");
+const ObjectId = mongoose.Types.ObjectId;
 
 // Import Utils
 const { catchAsync } = require("../utils/catchAsync");
@@ -91,17 +93,21 @@ exports.getAllPosts = catchAsync(async (req, res, next) => {
 exports.getPostById = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
-  const post = await Post.findById(id);
+  // const post = await Post.findById(id);
+
+  const post = await Post.aggregate([{ $match: { _id: ObjectId(id), active: true } }]);
+
+  const postFilter = post[0];
 
   if (!post) {
     return next(new AppError(404, "I cant find the post with the given ID"));
   }
 
-  const imgRef = ref(storage, post.image);
+  const imgRef = ref(storage, postFilter.image);
 
   const imgDownloadUrl = await getDownloadURL(imgRef);
 
-  post.image = imgDownloadUrl;
+  postFilter.image = imgDownloadUrl;
 
   res.status(200).json({
     status: "success",

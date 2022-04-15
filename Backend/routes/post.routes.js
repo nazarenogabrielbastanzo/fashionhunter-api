@@ -14,7 +14,7 @@ const {
 } = require("../controllers/post.controllers");
 
 // Middleware
-const { validateSession } = require("../middleware/auth.middleware");
+const { validateSession, protectAccountOwner } = require("../middleware/auth.middleware");
 
 // Utils
 const { upload } = require("../utils/multer");
@@ -24,10 +24,19 @@ router.use(validateSession);
 
 router.route("/").get(getAllPosts).post(upload.single("postImg"), createPost);
 
-router.patch("/updateImg/:id", upload.single("postImg"), updatePostImg);
-
 router.get("/userPost/:id", getPostByUser);
 
-router.route("/:id").get(getPostById).patch(updatePost).patch().delete(deletePost);
+router.patch(
+  "/updateImg/:id",
+  upload.single("postImg"),
+  protectAccountOwner,
+  updatePostImg
+);
+
+router
+  .route("/:id")
+  .get(getPostById)
+  .patch(protectAccountOwner, updatePost)
+  .delete(protectAccountOwner, deletePost);
 
 module.exports = { postRouter: router };

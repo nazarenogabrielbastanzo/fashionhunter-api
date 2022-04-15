@@ -3,6 +3,8 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { storage } = require("../utils/firebase");
 const { ref, uploadBytes, getDownloadURL } = require("firebase/storage");
+const mongoose = require("mongoose");
+const ObjectId = mongoose.Types.ObjectId;
 
 // Import Utils
 const { catchAsync } = require("../utils/catchAsync");
@@ -20,9 +22,13 @@ exports.loginUser = catchAsync(async (req, res, next) => {
   try {
     const { username, password } = req.body;
 
-    const user = await User.findOne({ username });
+    // const user = await User.findOne({ username });
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const user = await User.aggregate([{ $match: { username, active: true } }]);
+
+    const userFilter = user[0];
+
+    const isPasswordValid = await bcrypt.compare(password, userFilter.password);
 
     const token = jwt.sign({ username: username }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN
@@ -34,7 +40,7 @@ exports.loginUser = catchAsync(async (req, res, next) => {
 
     res.status(200).json({
       status: "success",
-      userId: user._id,
+      userId: userFilter._id,
       token
     });
   } catch (error) {
@@ -118,13 +124,17 @@ exports.createUser = catchAsync(async (req, res, next) => {
 exports.sendEmailResetPassword = catchAsync(async (req, res, next) => {
   const { email } = req.body;
 
-  const user = await User.findOne({ email });
+  // const user = await User.findOne({ email });
+
+  const user = await User.aggregate([{ $match: { email, active: true } }]);
+
+  const userFilter = user[0];
 
   if (!user) {
     return next(new AppError(400, "Credentials are invalid"));
   }
 
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+  const token = jwt.sign({ id: userFilter._id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN_TOKEN
   });
 
@@ -225,19 +235,25 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
 exports.getUserById = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
-  // const user = await User.aggregate([{ $match: { _id: ObjectId(id), active: true } }]);
+  const user = await User.aggregate([{ $match: { _id: ObjectId(id), active: true } }]);
 
-  const user = await User.findById(id).select("-password");
+  const userFilter = user[0];
+
+  // const user = await User.findById(id).select("-password");
 
   if (!user) {
     return next(new AppError(400, "User not found"));
   }
 
-  const imgRef = ref(storage, user.img);
+  const imgRef = ref(storage, userFilter.img);
 
   const imgDownloadUrl = await getDownloadURL(imgRef);
 
-  user.img = imgDownloadUrl;
+  userFilter.img = imgDownloadUrl;
+
+  userFilter.password = undefined;
+
+  userFilter.passwordConfirm = undefined;
 
   res.status(200).json({
     status: "success",
@@ -302,6 +318,10 @@ exports.updatePasswordUser = catchAsync(async (req, res, next) => {
 
   if (!validatePassword) {
     return next(new AppError(400, "The current password is wrong"));
+  }
+
+  if (newPassword !== confirmNewPassword) {
+    return next(new AppError(400, "The passwords are differents"));
   }
 
   const salt = await bcrypt.genSalt(12);

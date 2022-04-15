@@ -18,7 +18,7 @@ const {
 } = require("../controllers/user.controllers");
 
 // Middleware
-const { validateSession } = require("../middleware/auth.middleware");
+const { validateSession, protectAccountOwner } = require("../middleware/auth.middleware");
 
 // Utils
 const { upload } = require("../utils/multer");
@@ -43,12 +43,17 @@ router.get("/all-users", getAllUsers);
 
 router.get("/:id", getUserById);
 
-router.patch("/update-personalData/:id", updatePersonalData);
+router.patch("/update-personalData/:id", protectAccountOwner, updatePersonalData);
 
-router.patch("/update-userImg/:id", upload.single("userImg"), updateUserImg);
+router.patch(
+  "/update-userImg/:id",
+  upload.single("userImg"),
+  protectAccountOwner,
+  updateUserImg
+);
 
-router.patch("/update-password/:id", updatePasswordUser);
+router.patch("/update-password/:id", protectAccountOwner, updatePasswordUser);
 
-router.delete("/delete-user/:id", deleteUser);
+router.delete("/delete-user/:id", protectAccountOwner, deleteUser);
 
 module.exports = { userRouter: router };

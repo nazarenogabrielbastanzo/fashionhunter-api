@@ -42,3 +42,15 @@ exports.validateSession = catchAsync(async (req, res, next) => {
 
   next();
 });
+
+exports.protectAccountOwner = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const { currentUser } = req;
+
+  if (currentUser.id !== +id) {
+    return next(new AppError(403, "You cant update others users accounts"));
+  }
+
+  next();
+});
