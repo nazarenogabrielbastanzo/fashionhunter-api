@@ -9,6 +9,7 @@ const { filterObj } = require("../utils/filterObj");
 
 // Import Models
 const Post = require("../models/postModel");
+const User = require("../models/userModel");
 
 //  Create post
 exports.createPost = catchAsync(async (req, res, next) => {
@@ -24,17 +25,22 @@ exports.createPost = catchAsync(async (req, res, next) => {
 
     const result = await uploadBytes(imgRef, req.file.buffer);
 
+    const fullName = user.firstName + " " + user.lastName;
+    profileUserPic = await User.findById(user._id);
+
     const createPost = await Post.create({
-      userId: user._id,
+      postedBy: {
+        userId: user._id,
+        fullName,
+        profilePic: profileUserPic.img
+      },
       description,
       image: result.metadata.fullPath
     });
 
     res.status(201).json({
       status: "success",
-      data: {
-        createPost
-      }
+      createPost
     });
   } catch (err) {
     console.log(err);
@@ -48,18 +54,16 @@ exports.getAllPosts = catchAsync(async (req, res, next) => {
     const posts = await Post.find({ active: true });
 
     const postPromises = posts.map(
-      async ({ _id, userId, image, description, likes, comments, created }) => {
+      async ({ _id, postedBy, image, description, numLikes, numComments, created }) => {
         const imgRef = ref(storage, image);
-
         const imgDownloadUrl = await getDownloadURL(imgRef);
-
         return {
           _id,
-          userId,
+          postedBy,
           image: imgDownloadUrl,
           description,
-          likes,
-          comments,
+          numLikes,
+          numComments,
           created
         };
       }
@@ -185,5 +189,130 @@ exports.deletePost = catchAsync(async (req, res, next) => {
 
   res.status(204).json({
     status: "success"
+  });
+});
+
+// Like the post
+exports.likePost = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const user = req.currentUser;
+
+  const post = await Post.findById(id);
+
+  if (!post) {
+    return next(new AppError(404, "I cant find the post with the given ID"));
+  }
+
+  const userLiked = post.likes.find((like) => like.username === user.username);
+
+  if (userLiked) {
+    return next(new AppError(400, "You already liked this post"));
+  }
+
+  post.likes.push({ userId: user._id, username: user.username });
+  post.numLikes++;
+
+  await post.save();
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      post
+    }
+  });
+});
+
+// Unlike the post
+exports.unlikePost = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const user = req.currentUser;
+
+  const post = await Post.findById(id);
+
+  if (!post) {
+    return next(new AppError(404, "I cant find the post with the given ID"));
+  }
+
+  const userLiked = post.likes.find((like) => like.username === user.username);
+
+  if (!userLiked) {
+    return next(new AppError(400, "You have not liked this post"));
+  }
+
+  post.likes = post.likes.filter((like) => like.username !== user.username);
+  post.numLikes--;
+
+  await post.save();
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      post
+    }
+  });
+});
+
+// Add comment
+exports.addComment = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const user = req.currentUser;
+
+  const post = await Post.findById(id);
+
+  if (!post) {
+    return next(new AppError(404, "I cant find the post with the given ID"));
+  }
+
+  post.comments.push({
+    text: req.body.text,
+    postedBy: user.username
+  });
+  post.numComments++;
+
+  await post.save();
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      post
+    }
+  });
+});
+
+// Delete comments
+exports.deleteComment = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const user = req.currentUser;
+
+  const post = await Post.findById(id);
+
+  if (!post) {
+    return next(new AppError(404, "I cant find the post with the given ID"));
+  }
+
+  const comment = post.comments.find((comment) => comment.id === req.body.commentId);
+
+  if (!comment) {
+    return next(new AppError(404, "I cant find the comment with the given ID"));
+  }
+
+  if (comment.postedBy !== user.username) {
+    return next(new AppError(401, "You are not authorized to delete this comment"));
+  }
+
+  post.comments = post.comments.filter((comment) => comment.id !== req.body.commentId);
+  post.numComments--;
+
+  await post.save();
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      post
+    }
   });
 });

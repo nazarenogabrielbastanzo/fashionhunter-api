@@ -10,7 +10,11 @@ const {
   getPostById,
   getPostByUser,
   updatePost,
-  updatePostImg
+  updatePostImg,
+  likePost,
+  unlikePost,
+  addComment,
+  deleteComment
 } = require("../controllers/post.controllers");
 
 // Middleware
@@ -29,5 +33,9 @@ router.patch("/updateImg/:id", upload.single("postImg"), updatePostImg);
 router.get("/userPost/:id", getPostByUser);
 
 router.route("/:id").get(getPostById).patch(updatePost).patch().delete(deletePost);
+
+router.route("/like/:id").patch(likePost).delete(unlikePost);
+
+router.route("/comment/:id").post(addComment).delete(deleteComment);
 
 module.exports = { postRouter: router };

@@ -1,10 +1,20 @@
 const mongoose = require("mongoose");
 
 const PostSchema = new mongoose.Schema({
-  userId: {
-    type: String,
-    required: true
-  },
+  postedBy: [
+    {
+      userId: {
+        type: String
+      },
+      fullName: {
+        type: String
+      },
+      profilePic: {
+        type: String
+      },
+      _id: false
+    }
+  ],
   image: {
     type: String,
     required: true
@@ -13,9 +23,27 @@ const PostSchema = new mongoose.Schema({
     type: String,
     max: 150
   },
-  likes: {
-    type: Array,
-    default: []
+  numLikes: {
+    type: Number,
+    default: 0
+  },
+  likes: [
+    {
+      userId: {
+        type: String
+      },
+      username: {
+        type: String
+      },
+      likedAt: {
+        type: Date,
+        default: Date.now()
+      }
+    }
+  ],
+  numComments: {
+    type: Number,
+    default: 0
   },
   comments: [
     {
@@ -25,18 +53,14 @@ const PostSchema = new mongoose.Schema({
       },
       created: {
         type: Date,
-        default: Date.now
+        default: Date.now()
       },
       postedBy: {
-        type: mongoose.Schema.ObjectId,
+        type: String,
         ref: "User"
       }
     }
   ],
-  postedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
-  },
   active: {
     type: Boolean,
     default: true,
