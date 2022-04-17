@@ -14,7 +14,9 @@ const {
   likePost,
   unlikePost,
   addComment,
-  deleteComment
+  deleteComment,
+  addFavoritePicture,
+  getAllFavoritePicture
 } = require("../controllers/post.controllers");
 
 // Middleware
@@ -27,6 +29,8 @@ const { upload } = require("../utils/multer");
 router.use(validateSession);
 
 router.route("/").get(getAllPosts).post(upload.single("postImg"), createPost);
+
+router.route("/get-favorite-picture").get(getAllFavoritePicture);
 
 router.get("/userPost/:userId", getPostByUser);
 
@@ -41,5 +45,7 @@ router
 router.route("/like/:id").patch(likePost).delete(unlikePost);
 
 router.route("/comment/:id").post(addComment).delete(deleteComment);
+
+router.route("/favorite-picture/:id").post(addFavoritePicture);
 
 module.exports = { postRouter: router };

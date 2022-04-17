@@ -346,3 +346,51 @@ exports.deleteComment = catchAsync(async (req, res, next) => {
     }
   });
 });
+
+// Add favorite picture
+exports.addFavoritePicture = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const user = req.currentUser;
+
+  const post = await Post.findById(id);
+
+  if (!post) {
+    return next(new AppError(404, "I cant find the post with the given Id"));
+  }
+
+  user.favorites.push({
+    image: post.image
+  });
+
+  await user.save();
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      post: post.image
+    }
+  });
+});
+
+// Get all favorites picture
+exports.getAllFavoritePicture = catchAsync(async (req, res, next) => {
+  const user = req.currentUser;
+
+  const favorites = user.favorites.map(async ({ _id, image }) => {
+    const imgRef = ref(storage, image);
+
+    const imgDownloadUrl = await getDownloadURL(imgRef);
+
+    return { _id, image: imgDownloadUrl };
+  });
+
+  const resolvedFavorites = await Promise.all(favorites);
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      favorites: resolvedFavorites
+    }
+  });
+});

@@ -59,7 +59,15 @@ const UserSchema = new mongoose.Schema({
   img: {
     type: String,
     required: true
-  }
+  },
+  favorites: [
+    {
+      image: {
+        type: String,
+        required: false
+      }
+    }
+  ]
 });
 
 // encrypt passwordConfirm
