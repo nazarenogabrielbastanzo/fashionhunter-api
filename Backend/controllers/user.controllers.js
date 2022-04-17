@@ -15,14 +15,13 @@ const { promisify } = require("util");
 
 // Import Models
 const User = require("../models/userModel");
+const Post = require("../models/postModel");
 const Image = require("../models/imageModel");
 
 // Login User
 exports.loginUser = catchAsync(async (req, res, next) => {
   try {
     const { username, password } = req.body;
-
-    // const user = await User.findOne({ username });
 
     const user = await User.aggregate([{ $match: { username, active: true } }]);
 
@@ -34,7 +33,7 @@ exports.loginUser = catchAsync(async (req, res, next) => {
       expiresIn: process.env.JWT_EXPIRES_IN
     });
 
-    if (!user || !isPasswordValid) {
+    if (!userFilter || !isPasswordValid) {
       return next(new AppError(400, "Credentials are invalid"));
     }
 
@@ -44,10 +43,7 @@ exports.loginUser = catchAsync(async (req, res, next) => {
       token
     });
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: "User not found on the database"
-    });
+    return next(new AppError(400, "Credentials are invalid"));
   }
 });
 
@@ -95,6 +91,14 @@ exports.selectDefaultImage = catchAsync(async (req, res, next) => {
 exports.createUser = catchAsync(async (req, res, next) => {
   const { firstName, lastName, username, email, password, passwordConfirm } = req.body;
 
+  const passwordTrim = password.trim();
+
+  const passwordConfirmTrim = passwordConfirm.trim();
+
+  if (passwordTrim.length === 0 || passwordConfirmTrim.length === 0) {
+    return next(new AppError(400, "A valid password is required"));
+  }
+
   const imgRef = ref(storage, `imgs-${username}/${Date.now()}-${req.file.originalname}`);
 
   const result = await uploadBytes(imgRef, req.file.buffer);
@@ -110,6 +114,7 @@ exports.createUser = catchAsync(async (req, res, next) => {
   });
 
   user.password = undefined;
+
   user.passwordConfirm = undefined;
 
   res.status(201).json({
@@ -124,13 +129,11 @@ exports.createUser = catchAsync(async (req, res, next) => {
 exports.sendEmailResetPassword = catchAsync(async (req, res, next) => {
   const { email } = req.body;
 
-  // const user = await User.findOne({ email });
-
   const user = await User.aggregate([{ $match: { email, active: true } }]);
 
   const userFilter = user[0];
 
-  if (!user) {
+  if (!userFilter) {
     return next(new AppError(400, "Credentials are invalid"));
   }
 
@@ -162,15 +165,31 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
   const userId = decodedToken.id;
 
+  // This validation is to always request both fields
+  if (!password || !passwordConfirm) {
+    return next(new AppError(400, "A valid password is required with your confirmation"));
+  }
+
+  const passwordTrim = password.trim();
+
+  const passwordConfirmTrim = passwordConfirm.trim();
+
+  // This validation is so that the password is never empty
+  if (passwordTrim.length === 0 || passwordConfirmTrim.length === 0) {
+    return next(new AppError(400, "A valid password is required"));
+  }
+
   const salt = await bcrypt.genSalt(12);
 
-  const hashedPassword = await bcrypt.hash(password, salt);
+  const hashedPassword = await bcrypt.hash(passwordTrim, salt);
 
-  const hashedPasswordConfirm = await bcrypt.hash(passwordConfirm, salt);
+  const hashedPasswordConfirm = await bcrypt.hash(passwordConfirmTrim, salt);
 
-  if (password !== passwordConfirm) {
+  // This validation is because the password and its confirmation must be the same
+  if (passwordTrim !== passwordConfirmTrim) {
     return next(new AppError(400, "The passwords are differents"));
   }
+
   const updateUser = await User.findByIdAndUpdate(userId, {
     password: hashedPassword,
     passwordConfirm: hashedPasswordConfirm,
@@ -239,9 +258,7 @@ exports.getUserById = catchAsync(async (req, res, next) => {
 
   const userFilter = user[0];
 
-  // const user = await User.findById(id).select("-password");
-
-  if (!user) {
+  if (!userFilter) {
     return next(new AppError(400, "User not found"));
   }
 
@@ -275,7 +292,11 @@ exports.updatePersonalData = catchAsync(async (req, res, next) => {
     "biography"
   );
 
-  await User.findByIdAndUpdate(id, { ...data });
+  const userUpdated = await User.findByIdAndUpdate(id, { ...data });
+
+  if (!userUpdated) {
+    return next(new AppError(404, "I cant find the user with the given Id"));
+  }
 
   res.status(204).json({
     status: "success"
@@ -294,12 +315,12 @@ exports.updateUserImg = catchAsync(async (req, res, next) => {
 
   const result = await uploadBytes(imgRef, req.file.buffer);
 
-  const postImgUpdate = await User.findByIdAndUpdate(id, {
+  const userImgUpdate = await User.findByIdAndUpdate(id, {
     img: result.metadata.fullPath
   });
 
-  if (!postImgUpdate) {
-    return next(new AppError(404, "I cant find the user with the given ID"));
+  if (!userImgUpdate) {
+    return next(new AppError(404, "I cant find the user with the given Id"));
   }
 
   res.status(204).json({
@@ -316,19 +337,35 @@ exports.updatePasswordUser = catchAsync(async (req, res, next) => {
 
   const validatePassword = await bcrypt.compare(oldPassword, user.password);
 
+  // This validation is because the old password must match
   if (!validatePassword) {
     return next(new AppError(400, "The current password is wrong"));
   }
 
-  if (newPassword !== confirmNewPassword) {
+  // This validation is to always request both fields
+  if (!newPassword || !confirmNewPassword) {
+    return next(new AppError(400, "A valid password is required with your confirmation"));
+  }
+
+  const passwordTrim = newPassword.trim();
+
+  const passwordConfirmTrim = confirmNewPassword.trim();
+
+  // This validation is so that the password is never empty
+  if (passwordTrim.length === 0 || passwordConfirmTrim.length === 0) {
+    return next(new AppError(400, "A valid password is required"));
+  }
+
+  // This validation is because the password and its confirmation must be the same
+  if (passwordTrim !== passwordConfirmTrim) {
     return next(new AppError(400, "The passwords are differents"));
   }
 
   const salt = await bcrypt.genSalt(12);
 
-  const newPasswordCrypt = await bcrypt.hash(newPassword, salt);
+  const newPasswordCrypt = await bcrypt.hash(passwordTrim, salt);
 
-  const confirmNewPasswordCrypt = await bcrypt.hash(confirmNewPassword, salt);
+  const confirmNewPasswordCrypt = await bcrypt.hash(passwordConfirmTrim, salt);
 
   await User.findOneAndUpdate(
     { username: user.username },

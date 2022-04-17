@@ -15,103 +15,105 @@ const User = require("../models/userModel");
 
 //  Create post
 exports.createPost = catchAsync(async (req, res, next) => {
-  try {
-    const { description } = req.body;
+  const { description } = req.body;
 
-    const user = req.currentUser;
+  const user = req.currentUser;
 
-    const imgRef = ref(
-      storage,
-      `imgs-${user.username}/posts/${Date.now()}-${req.file.originalname}`
-    );
+  const imgRef = ref(
+    storage,
+    `imgs-${user.username}/posts/${Date.now()}-${req.file.originalname}`
+  );
 
-    const result = await uploadBytes(imgRef, req.file.buffer);
+  const result = await uploadBytes(imgRef, req.file.buffer);
 
-    const fullName = user.firstName + " " + user.lastName;
-    profileUserPic = await User.findById(user._id);
+  const fullName = user.firstName + " " + user.lastName;
 
-    const createPost = await Post.create({
-      postedBy: {
-        userId: user._id,
-        fullName,
-        profilePic: profileUserPic.img
-      },
-      description,
-      image: result.metadata.fullPath
-    });
+  profileUserPic = await User.findById(user._id);
 
-    res.status(201).json({
-      status: "success",
-      createPost
-    });
-  } catch (err) {
-    console.log(err);
-    res.status(500).send(error);
-  }
+  const createPost = await Post.create({
+    postedBy: {
+      userId: user._id,
+      fullName,
+      profilePic: profileUserPic.img
+    },
+    description,
+    image: result.metadata.fullPath
+  });
+
+  res.status(201).json({
+    status: "success",
+    createPost
+  });
 });
 
 // Get all posts
 exports.getAllPosts = catchAsync(async (req, res, next) => {
-  try {
-    const posts = await Post.find({ active: true });
+  const posts = await Post.find({ active: true });
 
-    const postPromises = posts.map(
-      async ({ _id, postedBy, image, description, numLikes, numComments, created }) => {
-        const imgRef = ref(storage, image);
-        const imgDownloadUrl = await getDownloadURL(imgRef);
-        return {
-          _id,
-          postedBy,
-          image: imgDownloadUrl,
-          description,
-          numLikes,
-          numComments,
-          created
-        };
-      }
-    );
+  const postPromises = posts.map(
+    async ({ _id, postedBy, image, description, numLikes, numComments, created }) => {
+      const { userId, fullName, profilePic } = postedBy[0];
 
-    const resolvedPost = await Promise.all(postPromises);
+      const imgRef = ref(storage, image);
 
-    if (posts.length > 0) {
-      res.status(200).json({
-        status: "success",
-        length: resolvedPost.length,
-        data: {
-          resolvedPost
-        }
-      });
-    } else {
-      res.status(400).json({
-        ok: false,
-        msg: "No Posts"
-      });
+      const profilePicRef = ref(storage, profilePic);
+
+      const imgDownloadUrl = await getDownloadURL(imgRef);
+
+      const profilePicDownloadUrl = await getDownloadURL(profilePicRef);
+
+      return {
+        _id,
+        postedBy: [{ userId, fullName, profilePicDownloadUrl }],
+        image: imgDownloadUrl,
+        description,
+        numLikes,
+        numComments,
+        created
+      };
     }
-  } catch (error) {
-    console.log(error);
-    res.status(500).send(error);
+  );
+
+  const resolvedPost = await Promise.all(postPromises);
+
+  if (posts.length <= 0) {
+    return next(new AppError(400, "No posts"));
   }
+
+  res.status(200).json({
+    status: "success",
+    length: resolvedPost.length,
+    data: {
+      resolvedPost
+    }
+  });
 });
 
 // Get post by id
 exports.getPostById = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
-  // const post = await Post.findById(id);
-
   const post = await Post.aggregate([{ $match: { _id: ObjectId(id), active: true } }]);
 
   const postFilter = post[0];
 
-  if (!post) {
+  if (!postFilter) {
     return next(new AppError(404, "I cant find the post with the given ID"));
   }
 
+  const { profilePic } = postFilter.postedBy[0];
+
   const imgRef = ref(storage, postFilter.image);
+
+  const profilePicRef = ref(storage, profilePic);
 
   const imgDownloadUrl = await getDownloadURL(imgRef);
 
+  const profilePicDownloadUrl = await getDownloadURL(profilePicRef);
+
   postFilter.image = imgDownloadUrl;
+
+  postFilter.postedBy[0].profilePic = profilePicDownloadUrl;
 
   res.status(200).json({
     status: "success",
@@ -123,18 +125,52 @@ exports.getPostById = catchAsync(async (req, res, next) => {
 
 // Get post by user
 exports.getPostByUser = catchAsync(async (req, res, next) => {
-  const { username } = req.params;
+  const { userId: user } = req.params;
 
-  const post = await Post.find({ username, active: true });
+  const userFind = await User.findById(user);
 
-  if (!post) {
-    return next(new AppError(404, "I cant find the post with the given username"));
+  if (!userFind) {
+    return next(new AppError(404, "I cant find the user with the given Id"));
   }
+
+  const posts = await Post.find({ active: true });
+
+  const userPost = [];
+
+  const newPostFilter = posts.forEach((post) => {
+    post.postedBy.forEach((posted) => {
+      if (posted.userId === user) {
+        userPost.push(post);
+      }
+    });
+  });
+
+  if (userPost <= 0) {
+    return next(new AppError(404, "The user does not have posts"));
+  }
+
+  const postPromises = userPost.map(
+    async ({ _id, image, description, numLikes, numComments }) => {
+      const imgRef = ref(storage, image);
+
+      const imgDownloadUrl = await getDownloadURL(imgRef);
+
+      return {
+        _id,
+        image: imgDownloadUrl,
+        description,
+        numLikes,
+        numComments
+      };
+    }
+  );
+
+  const resolvedPosts = await Promise.all(postPromises);
 
   res.status(200).json({
     status: "success",
     data: {
-      post
+      posts: resolvedPosts
     }
   });
 });
@@ -145,11 +181,7 @@ exports.updatePost = catchAsync(async (req, res, next) => {
 
   const data = filterObj(req.body, "description");
 
-  const postUpdate = await Post.findByIdAndUpdate(id, { ...data });
-
-  if (!postUpdate) {
-    return next(new AppError(404, "I cant find the post with the given ID"));
-  }
+  await Post.findByIdAndUpdate(id, { ...data });
 
   res.status(204).json({
     status: "success"
@@ -169,13 +201,9 @@ exports.updatePostImg = catchAsync(async (req, res, next) => {
 
   const result = await uploadBytes(imgRef, req.file.buffer);
 
-  const postImgUpdate = await Post.findByIdAndUpdate(id, {
+  await Post.findByIdAndUpdate(id, {
     image: result.metadata.fullPath
   });
-
-  if (!postImgUpdate) {
-    return next(new AppError(404, "I cant find the post with the given ID"));
-  }
 
   res.status(204).json({
     status: "success"
@@ -187,11 +215,7 @@ exports.deletePost = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
   // This is a soft delete technical
-  const postUpdate = await Post.findByIdAndUpdate(id, { active: false });
-
-  if (!postUpdate) {
-    return next(new AppError(404, "I cant find the post with the given ID"));
-  }
+  await Post.findByIdAndUpdate(id, { active: false });
 
   res.status(204).json({
     status: "success"
