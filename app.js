@@ -8,7 +8,9 @@ const { AppError } = require("./utils/AppError");
 
 const app = express();
 
-app.use(morgan("dev"));
+if (process.env.NODE_ENV === "development") {
+  app.use(morgan("dev"));
+}
 
 // Import Router
 const { userRouter } = require("./routes/user.routes");
