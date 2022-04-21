@@ -2,7 +2,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { storage } = require("../utils/firebase");
-const { ref, uploadBytes, getDownloadURL } = require("firebase/storage");
+const { ref, uploadBytes, getDownloadURL, deleteObject } = require("firebase/storage");
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -388,7 +388,12 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
     return next(new AppError(404, "I cant find the user with the given ID"));
   }
 
-  res.status(204).json({
-    status: "success"
+  // delete users posts
+  await Post.deleteMany({
+    postedBy: { $elemMatch: { userId: id } }
+  });
+
+  res.status(200).json({
+    status: "success, user and posts deleted"
   });
 });
