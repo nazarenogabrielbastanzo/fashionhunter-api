@@ -30,7 +30,7 @@ app.use("/api/v1/user", userRouter);
 app.use("/api/v1/posts", postRouter);
 
 app.get("/", (req, res) => {
-  res.send("Hello World");
+  res.send("Created by: James Noria && Nicolas Gonzales");
 });
 
 // Middleware for page that not found
