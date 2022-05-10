@@ -65,6 +65,34 @@ const UserSchema = new mongoose.Schema({
       image: {
         type: String,
         required: false
+      },
+      created: {
+        type: String,
+        required: false
+      }
+    }
+  ],
+  friends: [
+    {
+      firstName: {
+        type: String,
+        required: true
+      },
+      lastName: {
+        type: String,
+        required: true
+      },
+      username: {
+        type: String,
+        required: true
+      },
+      email: {
+        type: String,
+        required: true
+      },
+      img: {
+        type: String,
+        required: true
       }
     }
   ]
