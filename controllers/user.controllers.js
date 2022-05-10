@@ -392,3 +392,67 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
     status: "success"
   });
 });
+
+// Add Friend
+exports.addFriend = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const user = req.currentUser;
+
+  const friend = await User.findById(id);
+
+  const { firstName, lastName, username, email, img } = friend;
+
+  if (!friend) {
+    return next(new AppError(404, "I cant find the user with the given Id"));
+  }
+
+  user.friends.map((friend) => {
+    if (friend.username === username) {
+      return next(new AppError(404, `This user: "${username}" is already your friend`));
+    }
+  });
+
+  user.friends.push({
+    firstName,
+    lastName,
+    username,
+    email,
+    img
+  });
+
+  await user.save();
+
+  const newFriend = user.friends[user.friends.length - 1];
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      friend: newFriend
+    }
+  });
+});
+
+// Get all Friends
+exports.getAllFriends = catchAsync(async (req, res, next) => {
+  const user = req.currentUser;
+
+  const friends = user.friends.map(
+    async ({ _id, firstName, lastName, username, email, img }) => {
+      const imgRef = ref(storage, img);
+
+      const imgDownloadUrl = await getDownloadURL(imgRef);
+
+      return { _id, firstName, lastName, username, email, img: imgDownloadUrl };
+    }
+  );
+
+  const resolvedFriends = await Promise.all(friends);
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      friends: resolvedFriends
+    }
+  });
+});

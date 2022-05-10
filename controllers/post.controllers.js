@@ -359,8 +359,15 @@ exports.addFavoritePicture = catchAsync(async (req, res, next) => {
     return next(new AppError(404, "I cant find the post with the given Id"));
   }
 
+  user.favorites.map((favorite) => {
+    if (favorite.image === post.image) {
+      return next(new AppError(404, `This post is already your favorites`));
+    }
+  });
+
   user.favorites.push({
-    image: post.image
+    image: post.image,
+    created: new Date().toString()
   });
 
   await user.save();
@@ -368,7 +375,7 @@ exports.addFavoritePicture = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     data: {
-      post: post.image
+      post: user.favorites
     }
   });
 });
@@ -377,12 +384,12 @@ exports.addFavoritePicture = catchAsync(async (req, res, next) => {
 exports.getAllFavoritePicture = catchAsync(async (req, res, next) => {
   const user = req.currentUser;
 
-  const favorites = user.favorites.map(async ({ _id, image }) => {
+  const favorites = user.favorites.map(async ({ _id, image, created }) => {
     const imgRef = ref(storage, image);
 
     const imgDownloadUrl = await getDownloadURL(imgRef);
 
-    return { _id, image: imgDownloadUrl };
+    return { _id, image: imgDownloadUrl, created };
   });
 
   const resolvedFavorites = await Promise.all(favorites);

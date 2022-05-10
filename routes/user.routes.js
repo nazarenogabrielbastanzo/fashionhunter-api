@@ -14,7 +14,9 @@ const {
   updatePasswordUser,
   updatePersonalData,
   updateUserImg,
-  deleteUser
+  deleteUser,
+  addFriend,
+  getAllFriends
 } = require("../controllers/user.controllers");
 
 // Middleware
@@ -41,7 +43,11 @@ router.use(validateSession);
 
 router.get("/all-users", getAllUsers);
 
+router.get("/get-friends", getAllFriends);
+
 router.get("/:id", getUserById);
+
+router.post("/add-friend/:id", addFriend);
 
 router.patch("/update-personalData/:id", protectAccountOwner, updatePersonalData);
 
