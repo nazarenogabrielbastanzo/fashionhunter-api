@@ -29,6 +29,10 @@ app.use(cors());
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/posts", postRouter);
 
+app.get("/", (req, res) => {
+  res.send("Hello World");
+});
+
 // Middleware for page that not found
 app.use("*", (req, res, next) => {
   next(new AppError(404, `${req.originalUrl} not found in this server.`));
