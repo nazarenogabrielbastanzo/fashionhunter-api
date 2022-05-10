@@ -15,3 +15,6 @@ jobs:
           heroku_email: "jnoria.dev@gmail.com"
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
           heroku_app_name: "fhunter-api"
+          useforce: true,
+          dynamicFiles: true,
+          procfile: "web: node server.js"
