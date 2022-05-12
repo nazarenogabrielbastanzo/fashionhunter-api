@@ -412,11 +412,17 @@ exports.addFriend = catchAsync(async (req, res, next) => {
     return next(new AppError(404, "I cant find the user with the given Id"));
   }
 
-  user.friends.map((friend) => {
-    if (friend.username === username) {
-      return next(new AppError(404, `This user: "${username}" is already your friend`));
-    }
+  if (JSON.stringify(user._id) === `"${id}"`) {
+    return next(new AppError(404, "You cannot add yourself"));
+  }
+
+  const newFriend = user.friends.filter((friend) => {
+    return friend.username === username;
   });
+
+  if (newFriend.length !== 0) {
+    return next(new AppError(404, `This user: "${username}" is already your friend`));
+  }
 
   user.friends.push({
     firstName,
@@ -428,13 +434,8 @@ exports.addFriend = catchAsync(async (req, res, next) => {
 
   await user.save();
 
-  const newFriend = user.friends[user.friends.length - 1];
-
-  res.status(200).json({
-    status: "success",
-    data: {
-      friend: newFriend
-    }
+  res.status(204).json({
+    status: "success"
   });
 });
 
@@ -459,5 +460,30 @@ exports.getAllFriends = catchAsync(async (req, res, next) => {
     data: {
       friends: resolvedFriends
     }
+  });
+});
+
+// Delete friend
+exports.deleteFriend = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const user = req.currentUser;
+
+  const userFriends = user.friends;
+
+  const indexFriend = userFriends.findIndex((friend) => {
+    return JSON.stringify(friend._id) === `"${id}"`;
+  });
+
+  if (indexFriend === -1) {
+    return next(new AppError(404, "This user is not your friend"));
+  }
+
+  userFriends.splice(indexFriend, 1);
+
+  await user.save();
+
+  res.status(204).json({
+    status: "success"
   });
 });
