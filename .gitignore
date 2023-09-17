@@ -70,7 +70,7 @@ lerna-debug.log*
 .pnpm-debug.log*
 pnpm-lock.yaml
 package-lock.json
-.config.env
+*.config.env
 yarn.lock
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
